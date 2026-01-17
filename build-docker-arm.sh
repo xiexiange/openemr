@@ -39,8 +39,10 @@ mkdir -p "$OUTPUT_DIR" "$TEMP_DIR"
 
 # 定义需要打包的镜像
 IMAGES=(
-    "mariadb:11.8"
-    "openemr/openemr:7.0.4"
+    "axllent/mailpit:latest"
+    "couchdb:latest"
+    "selenium/standalone-chromium:4.39.0"
+    "openemr/dev-ldap:easy"
 )
 
 # 检查镜像平台的函数
@@ -378,5 +380,5 @@ for IMAGE in "${IMAGES[@]}"; do
 done
 echo ""
 echo -e "${BLUE}上传到 ARM 服务器:${NC}"
-echo "  scp $FINAL_TAR_GZ root@您的ARM服务器IP:/opt/"
+echo "  scp $FINAL_TAR_GZ root@8.130.85.4:/opt/openemr"
 echo ""
