@@ -32,8 +32,6 @@ services:
     volumes:
     - logvolume01:/var/log
     - sitevolume:/var/www/localhost/htdocs/openemr/sites
-    # 代码挂载 - 将本地代码挂载到容器中，这样拉取最新代码后重启容器即可生效
-    - ../..:/var/www/localhost/htdocs/openemr:rw
     environment:
       MYSQL_HOST: mysql
       MYSQL_ROOT_PASS: root
