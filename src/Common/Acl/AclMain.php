@@ -118,7 +118,6 @@
 namespace OpenEMR\Common\Acl;
 
 use OpenEMR\Gacl\Gacl;
-use OpenEMR\Common\Session\SessionWrapperFactory;
 
 class AclMain
 {
@@ -163,9 +162,8 @@ class AclMain
      */
     public static function aclCheckCore($section, $value, $user = '', $return_value = ''): bool
     {
-        $session = SessionWrapperFactory::getInstance()->getWrapper();
         if (! $user) {
-            $user = $session->get('authUser') ?? '';
+            $user = $_SESSION['authUser'] ?? '';
         }
 
         // Superuser always gets access to everything.

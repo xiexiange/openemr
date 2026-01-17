@@ -16,7 +16,6 @@ namespace OpenEMR\Services;
 use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Database\QueryUtils;
 use OpenEMR\Common\Forms\BaseForm;
-use OpenEMR\Common\Session\SessionWrapperFactory;
 
 class FormService
 {
@@ -73,17 +72,16 @@ class FormService
     ) {
 
         global $attendant_type;
-        $session = SessionWrapperFactory::getInstance()->getWrapper();
         if (!$user) {
-            $user = $session->get('authUser');
+            $user = $_SESSION['authUser'] ?? null;
         }
 
         if (!$group) {
-            $group = $session->get('authProvider');
+            $group = $_SESSION['authProvider'] ?? null;
         }
 
         if ($therapy_group == 'not_given') {
-            $therapy_group = $attendant_type == 'pid' ? null : $session->get('therapy_group');
+            $therapy_group = $attendant_type == 'pid' ? null : $_SESSION['therapy_group'];
         }
 
         //print_r($_SESSION['therapy_group']);die;

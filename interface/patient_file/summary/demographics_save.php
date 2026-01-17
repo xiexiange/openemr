@@ -183,11 +183,24 @@ while ($frow = sqlFetchArray($fres)) {
     }
 }
 
+// For new patients, force allow_patient_portal to YES
+if (empty($pid)) {
+    $newdata['patient_data']['allow_patient_portal'] = 'YES';
+}
+
+// For non-admin users creating new patients, force providerID to current user
+if (empty($pid) && !AclMain::aclCheckCore('admin', 'super')) {
+    $currentUserId = $_SESSION['authUserID'] ?? null;
+    if ($currentUserId) {
+        $newdata['patient_data']['providerID'] = $currentUserId;
+    }
+}
+
 // Save patient and employer data
 try {
     updatePatientData($pid, $newdata['patient_data']);
     if (!$GLOBALS['omit_employers']) {
-        updateEmployerData($pid, [], $newdata['employer_data']);
+        updateEmployerData($pid, false, $newdata['employer_data']);
     }
 } catch (Exception $e) {
     $logger->error("Error updating patient/employer data", [

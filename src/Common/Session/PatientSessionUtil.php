@@ -15,15 +15,12 @@
 namespace OpenEMR\Common\Session;
 
 use OpenEMR\Common\Logging\EventAuditLogger;
-use OpenEMR\Common\Session\SessionWrapperFactory;
 
 class PatientSessionUtil
 {
     public static function setPid($new_pid)
     {
         global $pid, $encounter;
-
-        $session = SessionWrapperFactory::getInstance()->getWrapper();
 
         // Escape $new_pid by forcing it to an integer to protect from sql injection
         $new_pid_int = intval($new_pid);
@@ -38,15 +35,14 @@ class PatientSessionUtil
         $sessionSetArray = [];
         $sessionUnsetArray = [];
 
-        $sessionPid = $session->get('pid', null);
         // Be careful not to clear the encounter unless the pid is really changing.
-        if ($sessionPid === null || $pid != $new_pid_int || $pid != $sessionPid) {
+        if (!isset($_SESSION['pid']) || $pid != $new_pid_int || $pid != $_SESSION['pid']) {
             $encounter = 0;
             $sessionSetArray['encounter'] = 0;
         }
 
         // unset therapy_group session when set session for patient
-        if ($sessionPid !== null && ($sessionPid != 0) && $session->get('therapy_group') !== null) {
+        if (isset($_SESSION['pid']) && ($_SESSION['pid'] != 0) && isset($_SESSION['therapy_group'])) {
             $sessionUnsetArray[] = 'therapy_group';
         }
 
@@ -54,6 +50,6 @@ class PatientSessionUtil
         $sessionSetArray['pid'] = $new_pid_int;
         SessionUtil::setUnsetSession($sessionSetArray, $sessionUnsetArray);
         $pid = $new_pid_int;
-        EventAuditLogger::getInstance()->newEvent("view", $session->get("authUser"), $session->get("authProvider"), 1, '', $pid);
+        EventAuditLogger::getInstance()->newEvent("view", $_SESSION["authUser"], $_SESSION["authProvider"], 1, '', $pid);
     }
 }

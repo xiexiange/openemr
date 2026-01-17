@@ -13,7 +13,22 @@ Render the login button, and google signin button, if set
 #}
 {% block buttons %}
 <div class="{{ button_container_class_list|default(['form-group', 'd-flex', 'justify-content-between'])|join(' ') }}">
-    <button id="login-button" class="btn btn-primary flex-fill" type="submit" onclick="transmit_form(this)">{{ "Login"|xlt }}</button>
+    {# 普通登录按钮：保持原有行为 #}
+    <button id="login-button"
+            class="btn btn-primary flex-fill"
+            type="submit"
+            onclick="transmit_form(this)">
+        {{ "Login"|xlt }}
+    </button>
+
+    {# 新增：登录到 H5 的按钮，复用与 Login 完全相同的提交流程 #}
+    <button id="login-h5-button"
+            class="btn btn-outline-secondary flex-fill ms-2"
+            type="button"
+            onclick="loginToH5()">
+        {{ "Login H5"|xlt }}
+    </button>
+
     {% if displayGoogleSignin %}
         <div class="g_id_signin flex-fill" data-type="standard"></div>
     {% endif %}

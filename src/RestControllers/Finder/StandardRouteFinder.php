@@ -32,6 +32,14 @@ class StandardRouteFinder implements IRouteFinder
         $restApiCreateEvent = new RestApiCreateEvent($routes, [], [], $request);
         $restApiCreateEvent = $this->kernel->getEventDispatcher()->dispatch($restApiCreateEvent, RestApiCreateEvent::EVENT_HANDLE, 10);
         $routes = $restApiCreateEvent->getRouteMap();
+        
+        // 加载微信小程序路由（最小侵入方式）
+        $wechatRoutesFile = __DIR__ . '/../../../custom/wechat_miniapp/Routes/wechat_routes.php';
+        if (file_exists($wechatRoutesFile)) {
+            $wechatRoutes = require $wechatRoutesFile;
+            $routes = array_merge($routes, $wechatRoutes);
+        }
+        
         return $routes;
     }
 }

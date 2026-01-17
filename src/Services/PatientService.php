@@ -16,13 +16,13 @@
 
 namespace OpenEMR\Services;
 
+use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Database\QueryPagination;
 use OpenEMR\Common\Database\QueryUtils;
 use OpenEMR\Common\Logging\SystemLogger;
 use OpenEMR\Common\ORDataObject\Address;
 use OpenEMR\Common\ORDataObject\ContactAddress;
 use OpenEMR\Common\Uuid\UuidRegistry;
-use OpenEMR\Common\Session\SessionWrapperFactory;
 use OpenEMR\Events\Patient\BeforePatientCreatedEvent;
 use OpenEMR\Events\Patient\BeforePatientUpdatedEvent;
 use OpenEMR\Events\Patient\PatientCreatedEvent;
@@ -134,7 +134,6 @@ class PatientService extends BaseService
      */
     public function databaseInsert($data)
     {
-        $session = SessionWrapperFactory::getInstance()->getWrapper();
         $freshPid = $this->getFreshPid();
         $data['pid'] = $freshPid;
         $data['uuid'] = (new UuidRegistry(['table_name' => 'patient_data']))->createUuid();
@@ -144,11 +143,24 @@ class PatientService extends BaseService
         $data['date'] = date("Y-m-d H:i:s");
         $data['regdate'] = date("Y-m-d H:i:s");
         // we should never be null here but for legacy reasons we are going to default to this
-        $createdBy = $session->get('authUserID'); // we don't let anyone else but the current user be the createdBy
+        $createdBy = $_SESSION['authUserID'] ?? null; // we don't let anyone else but the current user be the createdBy
         $data['created_by'] = $createdBy;
         $data['updated_by'] = $createdBy; // for an insert this is the same
         if (empty($data['pubpid'])) {
             $data['pubpid'] = $freshPid;
+        }
+
+        // Set allow_patient_portal to YES for new patients
+        if (empty($data['allow_patient_portal'])) {
+            $data['allow_patient_portal'] = 'YES';
+        }
+
+        // For non-admin users creating new patients, force providerID to current user (override any provided value)
+        if (!AclMain::aclCheckCore('admin', 'super')) {
+            $currentUserId = $_SESSION['authUserID'] ?? null;
+            if ($currentUserId) {
+                $data['providerID'] = $currentUserId;
+            }
         }
 
         // Before a patient is inserted, fire the "before patient created" event so listeners can do extra processing
@@ -217,14 +229,13 @@ class PatientService extends BaseService
      */
     public function databaseUpdate($data)
     {
-        $session = SessionWrapperFactory::getInstance()->getWrapper();
         // Get the data before update to send to the event listener
         $dataBeforeUpdate = $this->findByPid($data['pid']);
 
         // The `date` column is treated as an updated_date
         $data['date'] = date("Y-m-d H:i:s");
         // we should never be null here but for legacy reasons we are going to default to this
-        $updatedBy = $session->get('authUserID'); // we don't let anyone else but the current user be the updatedBy
+        $updatedBy = $_SESSION['authUserID'] ?? null; // we don't let anyone else but the current user be the updatedBy
         $data['updated_by'] = $updatedBy; // for an insert this is the same
         $table = PatientService::TABLE_NAME;
 

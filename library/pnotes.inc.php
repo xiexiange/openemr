@@ -12,7 +12,6 @@
  */
 
 use OpenEMR\Common\Logging\SystemLogger;
-use OpenEMR\Common\Session\SessionWrapperFactory;
 
 /**
  * Retrieve a note, given its ID
@@ -411,7 +410,7 @@ function addPnote(
     $message_status = 'New',
     $background_user = ""
 ) {
-    $session = SessionWrapperFactory::getInstance()->getWrapper();
+
     if (empty($datetime)) {
         $datetime = date('Y-m-d H:i:s');
     }
@@ -420,7 +419,7 @@ function addPnote(
     if ($message_status == 'Done') {
         $activity = 0;
     }
-    $user = ($background_user != "" ? $background_user : $session->get('authUser'));
+    $user = ($background_user != "" ? $background_user : $_SESSION['authUser']);
     $body = date('Y-m-d H:i') . ' (' . $user;
     if ($assigned_to) {
         $body .= " to $assigned_to";
@@ -432,7 +431,7 @@ function addPnote(
         'INSERT INTO pnotes (date, body, pid, user, groupname, ' .
         'authorized, activity, title, assigned_to, message_status, update_by, update_date) VALUES ' .
         '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())',
-        [$datetime, $body, $pid, $user, $session->get('authProvider'), $authorized, $activity, $title, $assigned_to, $message_status, $session->get('authUserID')]
+        [$datetime, $body, $pid, $user, ($_SESSION['authProvider'] ?? null), $authorized, $activity, $title, $assigned_to, $message_status, ($_SESSION['authUserID'] ?? null)]
     );
 }
 
@@ -446,7 +445,7 @@ function addMailboxPnote(
     $datetime = '',
     $message_status = "New"
 ) {
-    $session = SessionWrapperFactory::getInstance()->getWrapper();
+
     if (empty($datetime)) {
         $datetime = date('Y-m-d H:i:s');
     }
@@ -466,13 +465,12 @@ function addMailboxPnote(
     return sqlInsert(
         "INSERT INTO pnotes (date, body, pid, user, groupname, " .
         "authorized, activity, title, assigned_to, message_status, update_by, update_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())",
-        [$datetime, $body, $pid, $pid, 'Default', $authorized, $activity, $title, $assigned_to, $message_status, $session->get('authUserID')]
+        [$datetime, $body, $pid, $pid, 'Default', $authorized, $activity, $title, $assigned_to, $message_status, $_SESSION['authUserID']]
     );
 }
 
 function updatePnote($id, $newtext, $title, $assigned_to, $message_status = "", $datetime = ""): void
 {
-    $session = SessionWrapperFactory::getInstance()->getWrapper();
     $row = getPnoteById($id);
     if (! $row) {
         die("updatePnote() did not find id '" . text($id) . "'");
@@ -490,7 +488,7 @@ function updatePnote($id, $newtext, $title, $assigned_to, $message_status = "", 
     }
 
     $body = $row['body'] . "\n" . date('Y-m-d H:i') .
-    ' (' . $session->get('authUser');
+    ' (' . $_SESSION['authUser'];
     if ($assigned_to) {
         $body .= " to $assigned_to";
     }
@@ -501,7 +499,7 @@ function updatePnote($id, $newtext, $title, $assigned_to, $message_status = "", 
     $sql = "UPDATE pnotes SET " .
         "body = ?, activity = ?, title= ?, " .
         "assigned_to = ?, update_by = ?, update_date = NOW()";
-    $bindingParams =  [$body, $activity, $title, $assigned_to, $session->get('authUserID')];
+    $bindingParams =  [$body, $activity, $title, $assigned_to, $_SESSION['authUserID']];
     if ($message_status) {
         $sql .= " ,message_status = ?";
         $bindingParams[] = $message_status;
@@ -517,11 +515,10 @@ function updatePnote($id, $newtext, $title, $assigned_to, $message_status = "", 
 
 function updatePnoteMessageStatus($id, $message_status): void
 {
-    $session = SessionWrapperFactory::getInstance()->getWrapper();
     if ($message_status == "Done") {
-        sqlStatement("update pnotes set message_status = ?, activity = '0', update_by = ?, update_date = NOW() where id = ?", [$message_status, $session->get('authUserID'), $id]);
+        sqlStatement("update pnotes set message_status = ?, activity = '0', update_by = ?, update_date = NOW() where id = ?", [$message_status, $_SESSION['authUserID'], $id]);
     } else {
-        sqlStatement("update pnotes set message_status = ?, activity = '1', update_by = ?, update_date = NOW() where id = ?", [$message_status, $session->get('authUserID'), $id]);
+        sqlStatement("update pnotes set message_status = ?, activity = '1', update_by = ?, update_date = NOW() where id = ?", [$message_status, $_SESSION['authUserID'], $id]);
     }
 }
 
@@ -533,7 +530,6 @@ function updatePnoteMessageStatus($id, $message_status): void
  */
 function updatePnotePatient($id, $patient_id): void
 {
-    $session = SessionWrapperFactory::getInstance()->getWrapper();
     $row = getPnoteById($id);
     if (! $row) {
         die("updatePnotePatient() did not find id '" . text($id) . "'");
@@ -547,46 +543,41 @@ function updatePnotePatient($id, $patient_id): void
     }
 
     $pid = (int) $patient_id;
-    $newtext = "\n" . date('Y-m-d H:i') . " (patient set by " . $session->get('authUser') . ")";
+    $newtext = "\n" . date('Y-m-d H:i') . " (patient set by " . $_SESSION['authUser'] . ")";
     $body = $row['body'] . $newtext;
 
-    sqlStatement("UPDATE pnotes SET pid = ?, body = ?, update_by = ?, update_date = NOW() WHERE id = ?", [$pid, $body, $session->get('authUserID'), $id]);
+    sqlStatement("UPDATE pnotes SET pid = ?, body = ?, update_by = ?, update_date = NOW() WHERE id = ?", [$pid, $body, $_SESSION['authUserID'], $id]);
 }
 
 function authorizePnote($id, $authorized = "1"): void
 {
-    $session = SessionWrapperFactory::getInstance()->getWrapper();
-    sqlQuery("UPDATE pnotes SET authorized = ? , update_by = ?, update_date = NOW() WHERE id = ?", [$authorized, $session->get('authUserID'), $id]);
+    sqlQuery("UPDATE pnotes SET authorized = ? , update_by = ?, update_date = NOW() WHERE id = ?", [$authorized, $_SESSION['authUserID'], $id]);
 }
 
 function disappearPnote($id)
 {
-    $session = SessionWrapperFactory::getInstance()->getWrapper();
-    sqlStatement("UPDATE pnotes SET activity = '0', message_status = 'Done', update_by = ?, update_date = NOW()  WHERE id=?", [$session->get('authUserID'), $id]);
+    sqlStatement("UPDATE pnotes SET activity = '0', message_status = 'Done', update_by = ?, update_date = NOW()  WHERE id=?", [$_SESSION['authUserID'], $id]);
     return true;
 }
 
 function reappearPnote($id)
 {
-    $session = SessionWrapperFactory::getInstance()->getWrapper();
-    sqlStatement("UPDATE pnotes SET activity = '1', message_status = IF(message_status='Done','New',message_status), update_by = ?, update_date = NOW() WHERE id=?", [$session->get('authUserID'), $id]);
+    sqlStatement("UPDATE pnotes SET activity = '1', message_status = IF(message_status='Done','New',message_status), update_by = ?, update_date = NOW() WHERE id=?", [$_SESSION['authUserID'], $id]);
     return true;
 }
 
 function deletePnote($id)
 {
-    $session = SessionWrapperFactory::getInstance()->getWrapper();
     $assigned = getAssignedToById($id);
-    $authUser = $session->get('authUser');
-    if (!checkPortalAuthUser($authUser) && $assigned == 'portal-user') {
+    if (!checkPortalAuthUser($_SESSION['authUser']) && $assigned == 'portal-user') {
         return false;
     }
     if (
-        $assigned == $authUser
+        $assigned == $_SESSION['authUser']
         || $assigned == 'portal-user'
         || getMessageStatusById($id) == 'Done'
     ) {
-        sqlStatement("UPDATE pnotes SET deleted = '1', update_by = ?, update_date = NOW() WHERE id=?", [$session->get('authUserID'), $id]);
+        sqlStatement("UPDATE pnotes SET deleted = '1', update_by = ?, update_date = NOW() WHERE id=?", [$_SESSION['authUserID'], $id]);
         return true;
     } else {
         return false;

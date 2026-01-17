@@ -16,10 +16,7 @@
 require_once("../../globals.php");
 
 use OpenEMR\Common\Csrf\CsrfUtils;
-use OpenEMR\Common\Session\SessionWrapperFactory;
 use OpenEMR\Core\Header;
-
-$session = SessionWrapperFactory::getInstance()->getWrapper();
 ?>
 
 <html>
@@ -48,7 +45,7 @@ $session = SessionWrapperFactory::getInstance()->getWrapper();
             var pid = <?php echo js_escape($_GET['pid'])?>;
             var user_id = <?php echo js_escape($_GET['user_id'])?>;
             var value = $("#turnOff").prop('checked');
-            var csrf_token_form = <?php echo js_escape(CsrfUtils::collectCsrfToken('default', $session->getSymfonySession())); ?>;
+            var csrf_token_form = <?php echo js_escape(CsrfUtils::collectCsrfToken()); ?>;
             var data =  {
                 "pid": pid,
                 "user_id": user_id,

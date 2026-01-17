@@ -15,14 +15,9 @@ namespace OpenEMR\Cqm\Qdm;
 class QDMBaseType extends \OpenEMR\Cqm\Qdm\BaseTypes\DataElement
 {
     /**
-     * @property string|null For backwards compatibility
-     */
-    public ?string $_id = '';
-
-    /**
      * @property string $id
      */
-    public ?string $id = '';
+    public $id = '';
 
     /**
      * @property BaseTypes\Code $code

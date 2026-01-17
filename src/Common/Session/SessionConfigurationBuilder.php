@@ -107,7 +107,7 @@ class SessionConfigurationBuilder
     public static function forPortal(): array
     {
         return (new self())
-            ->setName(SessionUtil::PORTAL_SESSION_ID)
+            ->setName('PortalOpenEMR')
             ->build();
     }
 

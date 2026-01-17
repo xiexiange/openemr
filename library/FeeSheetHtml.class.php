@@ -16,8 +16,6 @@
 require_once(__DIR__ . "/FeeSheet.class.php");
 require_once(__DIR__ . "/api.inc.php");
 
-use OpenEMR\Common\Session\SessionWrapperFactory;
-
 class FeeSheetHtml extends FeeSheet
 {
   // Dynamically generated JavaScript to maintain justification codes.
@@ -35,10 +33,9 @@ class FeeSheetHtml extends FeeSheet
   //
     public static function genProviderOptionList($toptext, $default = 0, $inactive = false)
     {
-        $session = SessionWrapperFactory::getInstance()->getWrapper();
         $s = '';
         // Get user's default facility, or 0 if none.
-        $drow = sqlQuery("SELECT facility_id FROM users where username = ?", [$session->get('authUser')]);
+        $drow = sqlQuery("SELECT facility_id FROM users where username = ?", [$_SESSION['authUser']]);
         $def_facility = 0 + $drow['facility_id'];
         //
         $sqlarr = [$def_facility];

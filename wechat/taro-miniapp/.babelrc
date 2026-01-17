@@ -1,0 +1,10 @@
+{
+  "presets": [
+    [
+      "babel-preset-taro",
+      {
+        "framework": "react"
+      }
+    ]
+  ]
+}

@@ -15,10 +15,7 @@
 require_once("../../globals.php");
 
 use OpenEMR\Common\Csrf\CsrfUtils;
-use OpenEMR\Common\Session\SessionWrapperFactory;
 use OpenEMR\Core\Header;
-
-$session = SessionWrapperFactory::getInstance()->getWrapper();
 
 $formname = $_GET["formname"];
 $is_lbf = str_starts_with((string) $formname, 'LBF');
@@ -90,7 +87,7 @@ function show_graph(table_graph, name_graph, title_graph)
             table: table_graph,
             name: name_graph,
             title: title_graph,
-            csrf_token_form: <?php echo js_escape(CsrfUtils::collectCsrfToken('default', $session->getSymfonySession())); ?>
+            csrf_token_form: <?php echo js_escape(CsrfUtils::collectCsrfToken()); ?>
         }),
         dataType: "json",
         success: function(returnData){

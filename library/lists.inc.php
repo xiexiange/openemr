@@ -39,8 +39,6 @@
  * @link    http://www.open-emr.org
  */
 
-use OpenEMR\Common\Session\SessionWrapperFactory;
-
 // Build the $ISSUE_TYPE_CATEGORIES array
 // First, set the hard-coded options
 $ISSUE_TYPE_CATEGORIES = [
@@ -107,8 +105,7 @@ function getListById($id, $cols = "*")
 
 function addList($pid, $type, $title, $comments, $activity = "1")
 {
-    $session = SessionWrapperFactory::getInstance()->getWrapper();
-    return sqlInsert("insert into lists (date, pid, type, title, activity, comments, user, groupname) values (NOW(), ?, ?, ?, ?, ?, ?, ?)", [$pid, $type, $title, $activity, $comments, $session->get('authUser'), $session->get('authProvider')]);
+    return sqlInsert("insert into lists (date, pid, type, title, activity, comments, user, groupname) values (NOW(), ?, ?, ?, ?, ?, ?, ?)", [$pid, $type, $title, $activity, $comments, $_SESSION['authUser'], $_SESSION['authProvider']]);
 }
 
 function disappearList($id)

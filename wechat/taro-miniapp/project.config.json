@@ -1,0 +1,14 @@
+{
+  "miniprogramRoot": "dist",
+  "projectname": "taro-miniapp",
+  "description": "OpenEMR Taro 微信小程序",
+  "appid": "wx1bee5109fbe3e28e",
+  "setting": {
+    "urlCheck": false,
+    "es6": true,
+    "postcss": true,
+    "minified": true
+  },
+  "compileType": "miniprogram",
+  "libVersion": "2.30.0"
+}

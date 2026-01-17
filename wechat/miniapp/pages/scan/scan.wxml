@@ -1,0 +1,11 @@
+<!--pages/scan/scan.wxml-->
+<view class="container">
+  <view class="scan-area">
+    <view class="scan-icon">📷</view>
+    <text class="scan-tip">点击下方按钮开始扫码</text>
+  </view>
+
+  <view class="scan-btn btn-primary" bindtap="scanCode">
+    <text>开始扫码</text>
+  </view>
+</view>

@@ -20,8 +20,10 @@ if ($response !== true) {
     die(htmlspecialchars($response));
 }
 
+// Include global functions
+require_once(__DIR__ . "/../library/global_functions.php");
+
 use Dotenv\Dotenv;
-use OpenEMR\Common\Session\SessionWrapperFactory;
 use OpenEMR\Core\Kernel;
 use OpenEMR\Core\ModulesApplication;
 use OpenEMR\Common\Logging\EventAuditLogger;
@@ -178,13 +180,6 @@ $ResolveServerHost = static function () {
     return rtrim(trim($scheme . $host), "/");
 };
 
-// Debug function. Can expand for longer trace or file info.
-function GetCallingScriptName()
-{
-    $e = new Exception();
-    return $e->getTrace()[1]['file'];
-}
-
 // This is the directory that contains site-specific data.  Change this
 // only if you have some reason to.
 $GLOBALS['OE_SITES_BASE'] = "$webserver_root/sites";
@@ -232,8 +227,7 @@ $globalsBag->set('debug_ssl_mysql_connection', $GLOBALS['debug_ssl_mysql_connect
 $globalsBag->set('eventDispatcher', $eventDispatcher ?? null);
 $globalsBag->set('ignoreAuth_onsite_portal', $ignoreAuth_onsite_portal);
 $read_only = empty($sessionAllowWrite);
-$session = SessionWrapperFactory::getInstance()->getWrapper();
-if (session_status() === PHP_SESSION_NONE && !$session->isSymfonySession()) {
+if (session_status() === PHP_SESSION_NONE) {
     //error_log("1. LOCK ".GetCallingScriptName()); // debug start lock
     SessionUtil::coreSessionStart($web_root, $read_only);
     //error_log("2. FREE ".GetCallingScriptName()); // debug unlocked
@@ -241,8 +235,7 @@ if (session_status() === PHP_SESSION_NONE && !$session->isSymfonySession()) {
 
 // Set the site ID if required.  This must be done before any database
 // access is attempted.
-$siteId = $session->get('site_id');
-if (empty($siteId) || !empty($_GET['site'])) {
+if (empty($_SESSION['site_id']) || !empty($_GET['site'])) {
     if (!empty($_GET['site'])) {
         $tmp = $_GET['site'];
     } else {
@@ -273,9 +266,9 @@ if (empty($siteId) || !empty($_GET['site'])) {
         die();
     }
 
-    if ($siteId !== null && $siteId != $tmp) {
+    if (isset($_SESSION['site_id']) && ($_SESSION['site_id'] != $tmp)) {
       // This is to prevent using session to penetrate other OpenEMR instances within same multisite module
-        $session->clear(); // clear session, clean logout
+        session_unset(); // clear session, clean logout
         if (isset($landingpage) && !empty($landingpage)) {
           // OpenEMR Patient Portal use
             header('Location: index.php?site=' . urlencode((string) $tmp));
@@ -287,17 +280,17 @@ if (empty($siteId) || !empty($_GET['site'])) {
         exit;
     }
 
-    if ($siteId === null || $siteId != $tmp) {
-        $session->set('site_id', $tmp);
+    if (!isset($_SESSION['site_id']) || $_SESSION['site_id'] != $tmp) {
+        $_SESSION['site_id'] = $tmp;
         // error_log("Session site ID has been set to '$tmp'"); // debugging
     }
 }
 
 // Set the site-specific directory path.
-$globalsBag->set('OE_SITE_DIR', $globalsBag->getString('OE_SITES_BASE') . "/" . $session->get('site_id'));
+$globalsBag->set('OE_SITE_DIR', $globalsBag->getString('OE_SITES_BASE') . "/" . $_SESSION['site_id']);
 
 // Set a site-specific uri root path.
-$globalsBag->set('OE_SITE_WEBROOT', $web_root . "/sites/" . $session->get('site_id'));
+$globalsBag->set('OE_SITE_WEBROOT', $web_root . "/sites/" . $_SESSION['site_id']);
 
 
 // Root directory, relative to the webserver root:
@@ -431,9 +424,9 @@ if (!empty($glrow)) {
     $gl_user = [];
   // Collect the user id first
     $temp_authuserid = '';
-    if (!empty($session->get('authUserID'))) {
+    if (!empty($_SESSION['authUserID'])) {
       //Set the user id from the session variable
-        $temp_authuserid = $session->get('authUserID');
+        $temp_authuserid = $_SESSION['authUserID'];
     } else {
         if (!empty($_POST['authUser'])) {
             $temp_sql_ret = sqlQueryNoLog("SELECT `id` FROM `users` WHERE BINARY `username` = ?", [$_POST['authUser']]);
@@ -498,7 +491,7 @@ if (!empty($glrow)) {
             $current_theme = sqlQueryNoLog(
                 "SELECT `setting_value` FROM `patient_settings` " .
                 "WHERE setting_patient = ? AND `setting_label` = ?",
-                [$session->get('pid') ?? 0, 'portal_theme']
+                [$_SESSION['pid'] ?? 0, 'portal_theme']
             )['setting_value'] ?? null;
             $gl_value = $current_theme ?? null ?: $gl_value;
             $GLOBALS[$gl_name] = $web_root . '/public/themes/' . attr($gl_value) . '?v=' . $v_js_includes;
@@ -558,19 +551,19 @@ if (!empty($glrow)) {
     // For RTL languages we substitute the theme name with the name of RTL-adapted CSS file.
     $rtl_override = false;
     $rtl_portal_override = false;
-    if ($session->has('language_direction') && empty($session->get('patient_portal_onsite_two'))) {
+    if (isset($_SESSION['language_direction']) && empty($_SESSION['patient_portal_onsite_two'])) {
         if (
-            $session->get('language_direction') === 'rtl' &&
+            $_SESSION['language_direction'] == 'rtl' &&
             !strpos((string) $globalsBag->get('css_header', ''), 'rtl')
         ) {
             // the $css_header_value is set above
             $rtl_override = true;
         }
-    } elseif ($session->has('language_choice')) {
+    } elseif (isset($_SESSION['language_choice'])) {
         //this will support the onsite patient portal which will have a language choice but not yet a set language direction
-        $session->set('language_direction', getLanguageDir($session->get('language_choice')));
+        $_SESSION['language_direction'] = getLanguageDir($_SESSION['language_choice']);
         if (
-            $session->get('language_direction') === 'rtl' &&
+            $_SESSION['language_direction'] == 'rtl' &&
             !strpos((string) $globalsBag->get('portal_css_header', ''), 'rtl')
         ) {
             // the $css_header_value is set above
@@ -675,7 +668,7 @@ if (empty($globalsBag->getString('qualified_site_addr'))) {
 // Also important to note that changes to this global setting will not take effect during the same
 //  session (ie. user needs to logout) since not worth it to use resources to open session and write to it
 //  for every call to interface/globals.php .
-$session->set("enable_database_connection_pooling", $globalsBag->get("enable_database_connection_pooling", null));
+$_SESSION["enable_database_connection_pooling"] = $globalsBag->get("enable_database_connection_pooling", null);
 
 // If >0 this will enforce a separate PHP session for each top-level
 // browser window.  You must log in separately for each.  This is not
@@ -785,54 +778,27 @@ if (!empty($checkModulesTableExists)) {
 
 // Don't change anything below this line. ////////////////////////////
 
-$encounter = empty($session->get('encounter')) ? 0 : $session->get('encounter');
+$encounter = empty($_SESSION['encounter']) ? 0 : $_SESSION['encounter'];
 
-if (!empty($_GET['pid']) && empty($session->get('pid'))) {
+if (!empty($_GET['pid']) && empty($_SESSION['pid'])) {
     OpenEMR\Common\Session\SessionUtil::setSession('pid', $_GET['pid']);
-} elseif (!empty($_POST['pid']) && empty($session->get('pid'))) {
+} elseif (!empty($_POST['pid']) && empty($_SESSION['pid'])) {
     OpenEMR\Common\Session\SessionUtil::setSession('pid', $_POST['pid']);
 }
 
-$pid = empty($session->get('pid')) ? 0 : $session->get('pid');
-$userauthorized = empty($session->get('userauthorized')) ? 0 : $session->get('userauthorized');
-$groupname = empty($session->get('authProvider')) ? 0 : $session->get('authProvider');
+$pid = empty($_SESSION['pid']) ? 0 : $_SESSION['pid'];
+$userauthorized = empty($_SESSION['userauthorized']) ? 0 : $_SESSION['userauthorized'];
+$groupname = empty($_SESSION['authProvider']) ? 0 : $_SESSION['authProvider'];
 
 //This is crucial for therapy groups and patients mechanisms to work together properly
-$attendant_type = (empty($pid) && $session->has('therapy_group')) ? 'gid' : 'pid';
-$therapy_group = (empty($pid) && $session->has('therapy_group')) ? $session->get('therapy_group') : 0;
+$attendant_type = (empty($pid) && isset($_SESSION['therapy_group'])) ? 'gid' : 'pid';
+$therapy_group = (empty($pid) && isset($_SESSION['therapy_group'])) ? $_SESSION['therapy_group'] : 0;
 $globalsBag->set('encounter', $encounter);
 $globalsBag->set('pid', $pid);
 $globalsBag->set('userauthorized', $userauthorized);
 $globalsBag->set('groupname', $groupname);
 $globalsBag->set('attendant_type', $attendant_type);
 $globalsBag->set('groupname', $groupname);
-
-// global interface function to format text length using ellipses
-function strterm($string, $length)
-{
-    if (strlen((string) $string) >= ($length - 3)) {
-        return substr((string) $string, 0, $length - 3) . "...";
-    } else {
-        return $string;
-    }
-}
-
-// Helper function to generate an image URL that defeats browser/proxy caching when needed.
-function UrlIfImageExists($filename, $append = true)
-{
-    global $webserver_root, $web_root;
-    $session = SessionWrapperFactory::getInstance()->getWrapper();
-    $path = "sites/" . $session->get('site_id') . "/images/$filename";
-    // @ in next line because a missing file is not an error.
-    if ($stat = @stat("$webserver_root/$path")) {
-        if ($append) {
-            return "$web_root/$path?v=" . $stat['mtime'];
-        } else {
-            return "$web_root/$path";
-        }
-    }
-    return '';
-}
 
 // Override temporary_files_dir
 $globalsBag->set('temporary_files_dir', rtrim(sys_get_temp_dir(), '/'));
@@ -843,6 +809,10 @@ if ($globalsBag->getInt('user_debug', 0) > 1) {
     error_reporting(error_reporting() & ~E_WARNING & ~E_NOTICE & ~E_USER_WARNING & ~E_USER_DEPRECATED);
     ini_set('display_errors', 1);
 }
+
+// CRITICAL: Reset and reinitialize the singleton to capture ALL $GLOBALS
+OEGlobalsBag::resetInstance();
+$globalsBag = OEGlobalsBag::getInstance();
 
 // Re-set the local variables that aren't in $GLOBALS
 $globalsBag->set('webserver_root', $webserver_root);

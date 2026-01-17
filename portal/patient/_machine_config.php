@@ -19,21 +19,20 @@
 /* */
 
 use OpenEMR\Common\Session\SessionUtil;
-use OpenEMR\Common\Session\SessionWrapperFactory;
 use OpenEMR\Core\OEGlobalsBag;
 
 // Will start the (patient) portal OpenEMR session/cookie.
 // Need access to classes, so run autoloader now instead of in globals.php.
 require_once(__DIR__ . "/../../vendor/autoload.php");
-$session = SessionWrapperFactory::getInstance()->getWrapper();
 $globalsBag = OEGlobalsBag::getInstance();
+SessionUtil::portalSessionStart();
 
-if ($session->isSymfonySession() && $session->has('pid') && ($session->has('patient_portal_onsite_two') || $session->get('register') === true)) {
-    $pid = $session->get('pid');
+if (isset($_SESSION['pid']) && (isset($_SESSION['patient_portal_onsite_two']) || $_SESSION['register'] === true)) {
+    $pid = $_SESSION['pid'];
     $ignoreAuth_onsite_portal = true;
     GlobalConfig::$PORTAL = 1;
-    if (!$session->has('portal_init')) {
-        $session->set('portal_init', true);
+    if (!isset($_SESSION['portal_init'])) {
+        $_SESSION['portal_init'] = true;
     }
     require_once(__DIR__ . "/../../interface/globals.php");
 } else {
@@ -41,7 +40,7 @@ if ($session->isSymfonySession() && $session->has('pid') && ($session->has('pati
     GlobalConfig::$PORTAL = 0;
     $ignoreAuth = false;
     require_once(__DIR__ . "/../../interface/globals.php");
-    if (!$session->has('authUserID')) {
+    if (!isset($_SESSION['authUserID'])) {
         $landingpage = "index.php";
         header('Location: ' . $landingpage);
         exit;

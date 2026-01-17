@@ -19,7 +19,6 @@
 use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Common\Logging\SystemLogger;
 use OpenEMR\Common\Session\SessionUtil;
-use OpenEMR\Common\Session\SessionWrapperFactory;
 use OpenEMR\Common\Twig\TwigContainer;
 use OpenEMR\Core\OEGlobalsBag;
 use OpenEMR\Events\PatientPortal\AppointmentFilterEvent;
@@ -44,16 +43,16 @@ require_once("$srcdir/options.inc.php");
 require_once('lib/portal_mail.inc.php');
 require_once(__DIR__ . '/../library/appointments.inc.php');
 
-$session = SessionWrapperFactory::getInstance()->getWrapper();
 
-if ($session->has('register') && $session->get('register') === true) {
+
+if (isset($_SESSION['register']) && $_SESSION['register'] === true) {
     SessionUtil::portalSessionCookieDestroy();
     header('Location: ' . $landingpage . '&w');
     exit();
 }
 
-if (!$session->has('portal_init')) {
-    $session->set('portal_init', true);
+if (!isset($_SESSION['portal_init'])) {
+    $_SESSION['portal_init'] = true;
 }
 
 // Example https://localhost/openemr/portal/index.php?site=default&landOn=BillingSummary
@@ -74,14 +73,13 @@ $landOnHref = [
 ];
 // redirect using the interface query landOn or last page visited
 // TODO sjp - qualify if redirect feature is enabled!
-$whereto = $session->get('whereto', null);
+$whereto = $_SESSION['whereto'] ?? null;
 // set the landOn session variable to the redirected card.
-$session->set('landOn', $_REQUEST['landOn'] ?? null);
-$landWhere = $_REQUEST['landOn'] ?? null;
+$landWhere = $_SESSION['landOn'] = $_REQUEST['landOn'] ?? null;
 // Set the landOn href query from lookup.
 $where = $landOnHref[$landWhere] ?? null;
 if (!empty($where)) {
-    $session->set('whereto', $where);
+    $_SESSION['whereto'] = $where;
 }
 
 $logoService = new LogoService();
@@ -89,10 +87,10 @@ $logoService = new LogoService();
 // Get language definitions for js
 $language_defs = TranslationService::getLanguageDefinitionsForSession();
 
-$user = $session->get('sessionUser', 'portal user');
+$user = $_SESSION['sessionUser'] ?? 'portal user';
 $result = getPatientData($pid);
 
-$msgs = getPortalPatientNotes($session->get('portal_username'));
+$msgs = getPortalPatientNotes($_SESSION['portal_username']);
 $msgcnt = count($msgs);
 $newcnt = 0;
 foreach ($msgs as $i) {
@@ -355,7 +353,7 @@ try {
     $filteredEvent = $globalsBag->get('kernel')->getEventDispatcher()->dispatch($patientReportEvent, PatientReportFilterEvent::FILTER_PORTAL_HEALTHSNAPSHOT_TWIG_DATA);
     $data = [
         'user' => $user,
-        'whereto' => ($session->get('whereto', null)) ?: ($whereto ?? '#quickstart-card'),
+        'whereto' => ($_SESSION['whereto'] ?? null) ?: ($whereto ?? '#quickstart-card'),
         'result' => $result,
         'msgs' => $msgs,
         'msgcnt' => $msgcnt,
@@ -376,8 +374,8 @@ try {
         'pagetitle' => $globalsBag->get('openemr_name') . ' ' . xl('Portal'),
         'messagesURL' => $messagesURL,
         'patientID' => $pid,
-        'patientName' => $session->get('ptName', null),
-        'csrfUtils' => CsrfUtils::collectCsrfToken('default', $session->getSymfonySession()),
+        'patientName' => $_SESSION['ptName'] ?? null,
+        'csrfUtils' => CsrfUtils::collectCsrfToken(),
         'isEasyPro' => $isEasyPro,
         'appointments' => $appointments,
         'pastAppointments' => $past_appointments,
@@ -386,7 +384,7 @@ try {
         'appointmentCount' => $count ?? null,
         'pastAppointmentCount' => $pastCount ?? null,
         'displayLimitLabel' => xl('Display limit reached'),
-        'site_id' => $session->get('site_id', null) ?? ($_GET['site'] ?? 'default'), // one way or another, we will have a site_id.
+        'site_id' => $_SESSION['site_id'] ?? ($_GET['site'] ?? 'default'), // one way or another, we will have a site_id.
         'portal_timeout' => $globalsBag->get('portal_timeout') ?? 1800, // timeout is in seconds
         'language_defs' => $language_defs,
         'current_theme' => $current_theme,
@@ -394,12 +392,12 @@ try {
         'ccdaOk' => $ccdaOk,
         'allow_custom_report' => $globalsBag->get('allow_custom_report') ?? '0',
         'healthSnapshot' => $filteredEvent->getDataElement('healthSnapshot'),
-        'languageDirection' => $session->get('language_direction', 'ltr'),
+        'languageDirection' => $_SESSION['language_direction'] ?? 'ltr',
         'dateDisplayFormat' => $globalsBag->get('date_display_format'),
         'timeDisplayFormat' => $globalsBag->get('time_display_format'),
         'timezone' => $globalsBag->get('gbl_time_zone') ?? '',
         'assetVersion' => $globalsBag->get('v_js_includes'),
-        'extendVisit' => $session->get('portal_visit_extended', 1),
+        'extendVisit' => $_SESSION['portal_visit_extended'] ?? 1,
         'isTelemetryAllowed' => $isTelemetryAllowed,
         'eventNames' => [
             'sectionRenderPost' => RenderEvent::EVENT_SECTION_RENDER_POST,

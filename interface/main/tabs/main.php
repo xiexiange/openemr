@@ -368,7 +368,8 @@ $twig = (new TwigContainer(null, $GLOBALS['kernel']))->getTwig();
     <?php
     echo $twig->render("interface/main/tabs/therapy_group_template.html.twig", []);
     echo $twig->render("interface/main/tabs/user_data_template.html.twig", [
-        'openemr_name' => $GLOBALS['openemr_name']
+        'openemr_name' => $GLOBALS['openemr_name'],
+        'isAdmin' => AclMain::aclCheckCore('admin', 'super')
     ]);
     // Collect the menu then build it
     $menuMain = new MainMenuRole($GLOBALS['kernel']->getEventDispatcher());
@@ -440,7 +441,7 @@ $twig = (new TwigContainer(null, $GLOBALS['kernel']))->getTwig();
     <div id="mainBox" <?php echo $disp_mainBox ?>>
         <nav class="navbar navbar-expand-xl navbar-light bg-light py-0">
             <?php if ($GLOBALS['display_main_menu_logo'] === '1') : ?>
-                <a class="navbar-brand" href="https://www.open-emr.org" title="OpenEMR <?php echo xla("Website"); ?>" rel="noopener" target="_blank">
+                <a class="navbar-brand" href="" title="OpenEMR <?php echo xla("Website"); ?>" rel="noopener" target="_blank">
                     <img src="<?php echo $menuLogo; ?>" class="d-inline-block align-middle" height="16" alt="<?php echo xlt('Main Menu Logo'); ?>">
                 </a>
             <?php endif; ?>

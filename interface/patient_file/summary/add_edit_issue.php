@@ -23,13 +23,10 @@ require_once $GLOBALS['srcdir'] . '/csv_like_join.php';
 
 use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Csrf\CsrfUtils;
-use OpenEMR\Common\Session\SessionWrapperFactory;
 use OpenEMR\Core\Header;
 use OpenEMR\MedicalDevice\MedicalDevice;
 use OpenEMR\Services\PatientIssuesService;
 use OpenEMR\Services\Utils\DateFormatterUtils;
-
-$session = SessionWrapperFactory::getInstance()->getWrapper();
 
 // TBD - Resolve functional issues if opener is included in Header
 ?>
@@ -40,7 +37,7 @@ $session = SessionWrapperFactory::getInstance()->getWrapper();
 <?php
 
 if (!empty($_POST['form_save'])) {
-    if (!CsrfUtils::verifyCsrfToken($_POST["csrf_token_form"], 'default', $session->getSymfonySession())) {
+    if (!CsrfUtils::verifyCsrfToken($_POST["csrf_token_form"])) {
         CsrfUtils::csrfNotVerified();
     }
 
@@ -228,7 +225,7 @@ function ActiveIssueCodeRecycleFn($thispid2, $ISSUE_TYPES2): void
 // If we are saving, then save and close the window.
 //
 if (!empty($_POST['form_save'])) {
-    if (!CsrfUtils::verifyCsrfToken($_POST["csrf_token_form"], 'default', $session->getSymfonySession())) {
+    if (!CsrfUtils::verifyCsrfToken($_POST["csrf_token_form"])) {
         CsrfUtils::csrfNotVerified();
     }
 
@@ -295,8 +292,8 @@ if (!empty($_POST['form_save'])) {
     } else {
         $issueRecord["date"] = date("Y-m-d H:m:s");
         $issueRecord['activity'] = 1;
-        $issueRecord['user'] = $session->get('authUser');
-        $issueRecord['groupname'] = $session->get('authProvider');
+        $issueRecord['user'] = $_SESSION['authUser'];
+        $issueRecord['groupname'] = $_SESSION['authProvider'];
         $savedRecord = $patientIssuesService->createIssue($issueRecord);
         $issue = $savedRecord['id'] ?? "";
     }
@@ -315,7 +312,7 @@ if (!empty($_POST['form_save'])) {
     // If requested, link the issue to a specified encounter.
     if ($thisenc) {
         $patientIssuesService = new PatientIssuesService();
-        $patientIssuesService->linkIssueToEncounter($thispid, $thisenc, $issue, $session->get('authUserID'));
+        $patientIssuesService->linkIssueToEncounter($thispid, $thisenc, $issue, $_SESSION['authUserID']);
     }
 
     $tmp_title = $ISSUE_TYPES[$text_type][2] . ": $form_begin " . substr((string) $_POST['form_title'], 0, 40);
@@ -683,7 +680,7 @@ function getCodeText($code)
         param.innerHTML = "<i class='fa fa-circle-notch fa-spin'></i> " + jsText(<?php echo xlj('Processing'); ?>);
 
         top.restoreSession();
-        let url = '../../../library/ajax/udi.php?udi=' + encodeURIComponent(udi) + '&csrf_token_form=' + <?php echo js_url(CsrfUtils::collectCsrfToken('udi', $session->getSymfonySession())); ?>;
+        let url = '../../../library/ajax/udi.php?udi=' + encodeURIComponent(udi) + '&csrf_token_form=' + <?php echo js_url(CsrfUtils::collectCsrfToken('udi')); ?>;
         fetch(url, {
             credentials: 'same-origin',
             method: 'GET',
@@ -798,7 +795,7 @@ function getCodeText($code)
                     <div class="container-fluid">
                         <div class="row">
                             <div class='col-sm-6'>
-                                <input type="hidden" name="csrf_token_form" value="<?php echo attr(CsrfUtils::collectCsrfToken('default', $session->getSymfonySession())); ?>" />
+                                <input type="hidden" name="csrf_token_form" value="<?php echo attr(CsrfUtils::collectCsrfToken()); ?>" />
                                 <?php
                                 // action setting not required in html5.  By default form will submit to itself.
                                 // Provide key values previously passed as part of action string.

@@ -13,7 +13,6 @@
 namespace OpenEMR\Services\FHIR;
 
 use OpenEMR\Common\Logging\SystemLogger;
-use OpenEMR\Common\Logging\SystemLoggerAwareTrait;
 use OpenEMR\Common\System\System;
 use OpenEMR\Common\Uuid\UuidRegistry;
 use OpenEMR\Cqm\Qdm\BaseTypes\DateTime;
@@ -47,7 +46,6 @@ class FhirDocRefService
 {
     use ResourceServiceSearchTrait;
     use PatientSearchTrait;
-    use SystemLoggerAwareTrait;
 
     private $resourceSearchParameters;
 
@@ -84,7 +82,6 @@ class FhirDocRefService
      */
     public function getAll($searchParams, $puuidBind): ProcessingResult
     {
-        $this->getSystemLogger()->debug("FhirDocRefService::getAll called", ['searchParams' => $searchParams]);
         $fhirSearchResult = new ProcessingResult();
         $oeSearchParameters = $this->createOpenEMRSearchParameters($searchParams, $puuidBind);
         $type = $oeSearchParameters['type'] ?? $this->createDefaultType();
@@ -134,8 +131,8 @@ class FhirDocRefService
         $searchPatient = $oeSearchParameters[$mappedField->getField()];
 
         // we only allow one patient CCD to be generated at a time.
-        if (empty($searchPatient) || empty($searchPatient->getValues()) || count($searchPatient->getValues()) > 1) {
-            throw new SearchFieldException($mappedField->getField(), "patient field is required and cardinality is 1..1");
+        if (empty($searchPatient->getValues()) || count($searchPatient->getValues()) > 1) {
+            throw new SearchFieldException($mappedField->getField(), "Field is required and cardinality is 1..1");
         }
 
         $fhirPatientService = new FhirPatientService();

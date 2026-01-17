@@ -1,0 +1,26 @@
+.container {
+  padding: 40rpx;
+}
+
+.scan-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 100rpx 0;
+}
+
+.scan-icon {
+  font-size: 200rpx;
+  margin-bottom: 40rpx;
+}
+
+.scan-tip {
+  font-size: 28rpx;
+  color: #666;
+  text-align: center;
+}
+
+.scan-btn {
+  margin: 40rpx;
+}

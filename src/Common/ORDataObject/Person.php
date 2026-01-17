@@ -16,7 +16,6 @@ namespace OpenEMR\Common\ORDataObject;
 
 use DateTime;
 use OpenEMR\Common\Uuid\UuidRegistry;
-use OpenEMR\Common\Session\SessionWrapperFactory;
 
 class Person extends ORDataObject implements \JsonSerializable, \Stringable
 {
@@ -55,7 +54,6 @@ class Person extends ORDataObject implements \JsonSerializable, \Stringable
     public function __construct(private $id = "")
     {
         parent::__construct("person");
-        $session = SessionWrapperFactory::getInstance()->getWrapper();
         $this->setThrowExceptionOnError(true);
         $this->uuid = null;
         $this->title = "";
@@ -77,7 +75,7 @@ class Person extends ORDataObject implements \JsonSerializable, \Stringable
         $this->inactive_date = null;
         $this->notes = "";
         $this->created_date = new DateTime();
-        $this->created_by = $session->get('authUserID');
+        $this->created_by = $_SESSION['authUserID'] ?? null;
         $this->updated_date = null;
         $this->updated_by = null;
 
@@ -132,7 +130,6 @@ class Person extends ORDataObject implements \JsonSerializable, \Stringable
      */
     public function persist()
     {
-        $session = SessionWrapperFactory::getInstance()->getWrapper();
         // Generate UUID if creating new record
         if (empty($this->id) && empty($this->uuid)) {
             try {
@@ -146,7 +143,7 @@ class Person extends ORDataObject implements \JsonSerializable, \Stringable
 
         // Set updated timestamp and user
         $this->updated_date = new DateTime();
-        $this->updated_by = $session->get('authUserID') ?? $this->created_by;
+        $this->updated_by = $_SESSION['authUserID'] ?? $this->created_by;
 
         return parent::persist();
     }

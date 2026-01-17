@@ -32,20 +32,26 @@
                     <span data-bind="text:fname"></span> <span data-bind="text:lname"></span>
                 </span>
             </li>
+            {% if isAdmin %}
             <li><a class="dropdown-item" data-bind="click: editSettings">
                 <i class="fa fa-fw pr-2 text-muted fa-cog"></i>&nbsp;{{ "Settings"|xlt }}
             </a></li>
+            {% endif %}
             <li><a class="dropdown-item" data-bind="click: changePassword">
                 <i class="fa fa-fw pr-2 text-muted fa-lock"></i>&nbsp;{{ "Change Password"|xlt }}
             </a></li>
+            {% if isAdmin %}
             <li><a class="dropdown-item" data-bind="click: changeMFA">
                 <i class="fa fa-fw pr-2 text-muted fa-key"></i>&nbsp;{{ "MFA Management"|xlt }}
             </a></li>
+            {% endif %}
             <li class="dropdown-divider"></li>
+            {% if isAdmin %}
             <li><a class="dropdown-item"
                    data-bind="click: function() {navigateTab('./../about_page.php', 'About', function() {activateTabByName('About',true);});}">
                 <i class="fa fa-fw pr-2 text-muted fa-info"></i>&nbsp;{{ "About"|xlt }} {{ openemr_name|text }}
             </a></li>
+            {% endif %}
             <li class="dropdown-divider"></li>
             <li><a class="dropdown-item" data-bind="click: logout">
                 <i class="fa fa-fw pr-2 text-muted fa-sign-out-alt"></i>&nbsp;{{ "Logout"|xlt }}

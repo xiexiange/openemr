@@ -1,14 +1,35 @@
 
 <script>
     function transmit_form(element) {
-    // disable submit button to insert a notification of working
-    element.disabled = true;
-    // nothing fancy. mainly for mobile.
-    element.innerHTML = '<i class="fa fa-circle-notch fa-spin mx-1"></i><span class="sr-only">' + jsText({{ "Authenticating"|xlj }}) + '</span>';
-    {% if hasSession %}
+        // disable submit button to insert a notification of working
+        element.disabled = true;
+        // nothing fancy. mainly for mobile.
+        element.innerHTML = '<i class="fa fa-circle-notch fa-spin mx-1"></i><span class="sr-only">' + jsText({{ "Authenticating"|xlj }}) + '</span>';
+        {% if hasSession %}
         document.cookie = {{ cookieText }};
         {% endif %}
-    document.forms[0].submit();
-    return true;
-}
+        document.forms[0].submit();
+        return true;
+    }
+
+    // 登录到 H5：先设置 appChoice=H5，再走与 Login 完全一致的提交流程
+    function loginToH5() {
+        var appSelect = document.getElementById('selApp');
+        // 如果没有 apps 下拉（未配置 apps 列表），则动态创建一个隐藏字段 appChoice
+        if (!appSelect) {
+            var form = document.getElementById('login_form') || document.forms[0];
+            if (form) {
+                appSelect = document.createElement('input');
+                appSelect.type = 'hidden';
+                appSelect.id = 'selApp';
+                appSelect.name = 'appChoice';
+                form.appendChild(appSelect);
+            }
+        }
+        if (appSelect) {
+            appSelect.value = 'H5'; // 与 Admin → Lists → apps 中的 Option ID 一致
+        }
+        var loginButton = document.getElementById('login-button');
+        transmit_form(loginButton);
+    }
 </script>

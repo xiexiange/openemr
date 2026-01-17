@@ -16,6 +16,7 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
+use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Uuid\UuidRegistry;
 use OpenEMR\Services\FacilityService;
 use OpenEMR\Services\PatientService;
@@ -23,7 +24,6 @@ use OpenEMR\Services\SocialHistoryService;
 use OpenEMR\Billing\InsurancePolicyTypes;
 use OpenEMR\Services\InsuranceCompanyService;
 use OpenEMR\Services\EmployerService;
-use OpenEMR\Common\Session\SessionWrapperFactory;
 
 require_once(__DIR__ . "/dupscore.inc.php");
 
@@ -136,7 +136,6 @@ function getFacility($facid = 0)
 {
     global $facilityService;
 
-    $session = SessionWrapperFactory::getInstance()->getWrapper();
     $facility = null;
 
     if ($facid > 0) {
@@ -145,12 +144,12 @@ function getFacility($facid = 0)
 
     if ($GLOBALS['login_into_facility']) {
         //facility is saved in sessions
-        $facility  = $facilityService->getById($session->get('facilityId'));
+        $facility  = $facilityService->getById($_SESSION['facilityId']);
     } else {
         if ($facid == 0) {
             $facility = $facilityService->getPrimaryBillingLocation();
         } else {
-            $facility = $facilityService->getFacilityForUser($session->get('authUserID'));
+            $facility = $facilityService->getFacilityForUser($_SESSION['authUserID']);
         }
     }
 
@@ -505,7 +504,6 @@ function _set_patient_inc_count($limit, $count, $where, $whereBindArray = []): v
 // it needs to be escaped via whitelisting prior to using this function.
 function getPatientLnames($term = "%", $given = "pid, id, lname, fname, mname, providerID, DATE_FORMAT(DOB,'%m/%d/%Y') as DOB_TS", $orderby = "lname ASC, fname ASC", $limit = "all", $start = "0")
 {
-    $session = SessionWrapperFactory::getInstance()->getWrapper();
     $names = getPatientNameSplit($term);
 
     foreach ($names as $key => $val) {
@@ -553,12 +551,19 @@ function getPatientLnames($term = "%", $given = "pid, id, lname, fname, mname, p
     }
 
     if (!empty($GLOBALS['pt_restrict_field'])) {
-        if ($session->get("authUser") != 'admin' || $GLOBALS['pt_restrict_admin']) {
+        if ($_SESSION["authUser"] != 'admin' || $GLOBALS['pt_restrict_admin']) {
             $where .= " AND ( patient_data." . add_escape_custom($GLOBALS['pt_restrict_field']) .
                 " = ( SELECT facility_id FROM users WHERE username = ?) OR patient_data." .
                 add_escape_custom($GLOBALS['pt_restrict_field']) . " = '' ) ";
-            array_push($sqlBindArray, $session->get("authUser"));
+            array_push($sqlBindArray, $_SESSION["authUser"]);
         }
+    }
+
+    // Restrict patients to those assigned to the current logged-in provider
+    // Admin users can see all patients
+    if (!empty($_SESSION['authUserID']) && ($_SESSION['authUser'] ?? '') != 'admin') {
+        $where .= " AND providerID = ?";
+        array_push($sqlBindArray, $_SESSION['authUserID']);
     }
 
     $sql = "SELECT $given FROM patient_data WHERE $where ORDER BY $orderby";
@@ -631,17 +636,24 @@ function getPatientNameSplit($term)
 // it needs to be escaped via whitelisting prior to using this function.
 function getPatientId($pid = "%", $given = "pid, id, lname, fname, mname, providerID, DATE_FORMAT(DOB,'%m/%d/%Y') as DOB_TS", $orderby = "lname ASC, fname ASC", $limit = "all", $start = "0")
 {
-    $session = SessionWrapperFactory::getInstance()->getWrapper();
+
     $sqlBindArray = [];
     $where = "pubpid LIKE ? ";
     array_push($sqlBindArray, $pid . "%");
     if (!empty($GLOBALS['pt_restrict_field']) && $GLOBALS['pt_restrict_by_id']) {
-        if ($session->get("authUser") != 'admin' || $GLOBALS['pt_restrict_admin']) {
+        if ($_SESSION["authUser"] != 'admin' || $GLOBALS['pt_restrict_admin']) {
             $where .= "AND ( patient_data." . add_escape_custom($GLOBALS['pt_restrict_field']) .
                     " = ( SELECT facility_id FROM users WHERE username = ?) OR patient_data." .
                     add_escape_custom($GLOBALS['pt_restrict_field']) . " = '' ) ";
-            array_push($sqlBindArray, $session->get("authUser"));
+            array_push($sqlBindArray, $_SESSION["authUser"]);
         }
+    }
+
+    // Restrict patients to those assigned to the current logged-in provider
+    // Admin users can see all patients
+    if (!empty($_SESSION['authUserID']) && ($_SESSION['authUser'] ?? '') != 'admin') {
+        $where .= " AND providerID = ?";
+        array_push($sqlBindArray, $_SESSION['authUserID']);
     }
 
     $sql = "SELECT $given FROM patient_data WHERE $where ORDER BY $orderby";
@@ -678,6 +690,17 @@ function getByPatientDemographics($searchTerm = "%", $given = "pid, id, lname, f
 
         $where .= " " . add_escape_custom($row["field_id"]) . " like ? ";
         array_push($sqlBindArray, "%" . $searchTerm . "%");
+    }
+
+    // Restrict patients to those assigned to the current logged-in provider
+    // Admin users can see all patients
+    if (!empty($_SESSION['authUserID']) && ($_SESSION['authUser'] ?? '') != 'admin') {
+        if (!empty($where)) {
+            $where = "($where) AND providerID = ?";
+        } else {
+            $where = "providerID = ?";
+        }
+        array_push($sqlBindArray, $_SESSION['authUserID']);
     }
 
     $sql = "SELECT $given FROM patient_data WHERE $where ORDER BY $orderby";
@@ -749,6 +772,13 @@ function getByPatientDemographicsFilter(
         "b.code LIKE ? " .
         ") > 0";
         array_push($sqlBindArray, $search_service_code);
+    }
+
+    // Restrict patients to those assigned to the current logged-in provider
+    // Admin users can see all patients
+    if (!empty($_SESSION['authUserID']) && ($_SESSION['authUser'] ?? '') != 'admin') {
+        $where = "( $where ) AND providerID = ?";
+        array_push($sqlBindArray, $_SESSION['authUserID']);
     }
 
     $sql = "SELECT $given FROM patient_data WHERE $where ORDER BY $orderby";
@@ -902,16 +932,15 @@ function getPatientNameFirstLast($pid)
 // it needs to be escaped via whitelisting prior to using this function.
 function getPatientDOB($DOB = "%", $given = "pid, id, lname, fname, mname", $orderby = "lname ASC, fname ASC", $limit = "all", $start = "0")
 {
-    $session = SessionWrapperFactory::getInstance()->getWrapper();
     $sqlBindArray = [];
     $where = "DOB like ? ";
     array_push($sqlBindArray, $DOB . "%");
     if (!empty($GLOBALS['pt_restrict_field'])) {
-        if ($session->get("authUser") != 'admin' || $GLOBALS['pt_restrict_admin']) {
+        if ($_SESSION["authUser"] != 'admin' || $GLOBALS['pt_restrict_admin']) {
             $where .= "AND ( patient_data." . add_escape_custom($GLOBALS['pt_restrict_field']) .
                     " = ( SELECT facility_id FROM users WHERE username = ?) OR patient_data." .
                     add_escape_custom($GLOBALS['pt_restrict_field']) . " = '' ) ";
-            array_push($sqlBindArray, $session->get("authUser"));
+            array_push($sqlBindArray, $_SESSION["authUser"]);
         }
     }
 
@@ -1034,7 +1063,9 @@ function newPatientData(
 
     $fitness = 0;
     $referral_source = '';
-    if ($pid) {
+    $isNewPatient = ($pid == "MAX(pid)+1" || empty($pid));
+    
+    if ($pid && !$isNewPatient) {
         $rez = sqlQuery("select id, fitness, referral_source from patient_data where pid = ?", [$pid]);
         // Check for brain damage:
         if ($db_id != $rez['id']) {
@@ -1045,6 +1076,16 @@ function newPatientData(
 
         $fitness = $rez['fitness'];
         $referral_source = $rez['referral_source'];
+    }
+    
+    // For non-admin users creating new patients, force providerID to current user (override any provided value)
+    if ($isNewPatient) {
+        if (!AclMain::aclCheckCore('admin', 'super')) {
+            $currentUserId = $_SESSION['authUserID'] ?? null;
+            if ($currentUserId) {
+                $providerID = $currentUserId;
+            }
+        }
     }
 
     // Get the default price level.
@@ -1103,6 +1144,7 @@ function newPatientData(
         referral_source='" . add_escape_custom($referral_source) . "',
         regdate='" . add_escape_custom($regdate) . "',
         pricelevel='" . add_escape_custom($pricelevel) . "',
+        allow_patient_portal='YES',
         date=NOW()");
 
     $id = sqlInsert($query);

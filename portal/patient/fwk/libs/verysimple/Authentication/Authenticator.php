@@ -5,7 +5,6 @@
 /**
  * import supporting libraries
  */
-use OpenEMR\Common\Session\SessionWrapperFactory;
 require_once("IAuthenticatable.php");
 require_once("AuthenticationException.php");
 
@@ -46,10 +45,9 @@ class Authenticator
     {
         if (self::$user == null) {
             self::Init();
-            $session = SessionWrapperFactory::getInstance()->getWrapper();
-            $sessionGuid = $session->get($guid);
-            if (!empty($sessionGuid)) {
-                self::$user = unserialize($sessionGuid);
+
+            if (isset($_SESSION [$guid])) {
+                self::$user = unserialize($_SESSION [$guid]);
             }
         }
 
@@ -69,8 +67,7 @@ class Authenticator
     {
         self::UnsetAllSessionVars(); // this calls Init so we don't have to here
         self::$user = $user;
-        $session = SessionWrapperFactory::getInstance()->getWrapper();
-        $session->set($guid, serialize($user));
+        $_SESSION [$guid] = serialize($user);
     }
 
     /**
@@ -79,8 +76,9 @@ class Authenticator
     public static function UnsetAllSessionVars()
     {
         self::Init();
-        $session = SessionWrapperFactory::getInstance()->getWrapper();
-        $session->clear();
+        foreach (array_keys($_SESSION) as $key) {
+            unset($_SESSION [$key]);
+        }
     }
 
     /**
@@ -93,8 +91,7 @@ class Authenticator
     {
         self::Init();
         self::$user = null;
-        $session = SessionWrapperFactory::getInstance()->getWrapper();
-        $session->remove($guid);
+        unset($_SESSION [$guid]);
 
         self::UnsetAllSessionVars();
 

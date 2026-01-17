@@ -16,7 +16,7 @@ Including this partial will render the acknowledgements link.
 {% if displayAck %}
 {% block acknowledgements %}
     <p class="{{ acknowledgements_p_class_list|default(['text-center', 'small'])|join(' ') }}">
-        <a class="{{ acknowledgements_link_class_list|default([])|join(' ') }}" href="../../acknowledge_license_cert.html" target="main">{{ 'Acknowledgments, Licensing and Certification'|xlt }}</a>
+        <a class="{{ acknowledgements_link_class_list|default([])|join(' ') }}" href="" target="main">{{ 'Acknowledgments, Licensing and Certification'|xlt }}</a>
     </p>
 {% endblock %}
 {% endif %}

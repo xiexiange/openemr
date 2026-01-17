@@ -1,0 +1,148 @@
+# 微信小程序接入 TODO 清单
+
+## 阶段一：后端 API 开发
+
+### ✅ 1. 数据库迁移
+- [ ] 创建迁移脚本 `custom/wechat_miniapp/migrations/add_wechat_fields.sql`
+  - [ ] 为 `users` 表添加微信字段（wechat_openid, wechat_unionid, wechat_bind_time）
+  - [ ] 为 `patient_data` 表添加微信字段
+  - [ ] 创建 `wechat_qrcode` 表（存储二维码信息）
+  - [ ] 添加必要的索引
+
+### ✅ 2. 后端服务层
+- [ ] 创建 `custom/wechat_miniapp/Services/WeChatQrCodeService.php`
+  - [ ] 实现生成二维码方法
+  - [ ] 实现验证二维码方法
+  - [ ] 实现绑定OpenID方法
+  - [ ] 实现标记二维码状态方法
+- [ ] 创建 `custom/wechat_miniapp/Services/WeChatUserService.php`
+  - [ ] 实现通过OpenID查找用户
+  - [ ] 实现医生注册方法
+  - [ ] 实现绑定微信到医生方法
+- [ ] 创建 `custom/wechat_miniapp/Services/WeChatPatientService.php`
+  - [ ] 实现通过OpenID查找患者
+  - [ ] 实现患者注册方法
+  - [ ] 实现绑定微信到患者方法
+  - [ ] 实现绑定患者到医生方法
+
+### ✅ 3. API 控制器
+- [ ] 创建 `custom/wechat_miniapp/Controllers/WeChatMiniappController.php`
+  - [ ] 实现生成医生注册二维码接口
+  - [ ] 实现生成患者绑定二维码接口
+  - [ ] 实现绑定微信接口
+  - [ ] 实现医生注册接口
+  - [ ] 实现患者注册接口
+  - [ ] 实现检查二维码状态接口
+
+### ✅ 4. 路由集成
+- [ ] 创建 `custom/wechat_miniapp/Routes/wechat_routes.php`
+- [ ] 创建事件监听器 `custom/wechat_miniapp/Listeners/WeChatRouteListener.php`
+  - [ ] 监听 RestApiCreateEvent 事件
+  - [ ] 添加微信小程序路由到路由映射
+
+---
+
+## 阶段二：小程序前端开发
+
+### ✅ 5. 小程序项目初始化
+- [ ] 创建 `wechat/miniapp/app.json`（小程序配置）
+- [ ] 创建 `wechat/miniapp/app.js`（小程序入口）
+- [ ] 创建 `wechat/miniapp/app.wxss`（全局样式）
+- [ ] 创建 `wechat/miniapp/project.config.json`（项目配置）
+
+### ✅ 6. 工具类封装
+- [ ] 创建 `wechat/miniapp/utils/api.js`（API调用封装）
+  - [ ] 实现请求拦截器
+  - [ ] 实现错误处理
+  - [ ] 实现Token管理
+- [ ] 创建 `wechat/miniapp/utils/wechat.js`（微信API封装）
+  - [ ] 实现获取OpenID
+  - [ ] 实现扫码功能
+- [ ] 创建 `wechat/miniapp/utils/storage.js`（本地存储封装）
+
+### ✅ 7. 医生注册功能
+- [ ] 创建 `wechat/miniapp/pages/doctor-register/` 目录
+  - [ ] `index.js` - 医生注册逻辑
+  - [ ] `index.wxml` - 医生注册页面
+  - [ ] `index.wxss` - 样式文件
+  - [ ] `index.json` - 页面配置
+- [ ] 实现扫码功能
+- [ ] 实现表单验证
+- [ ] 实现提交注册
+
+### ✅ 8. 患者绑定功能
+- [ ] 创建 `wechat/miniapp/pages/patient-bind/` 目录
+  - [ ] `index.js` - 患者绑定逻辑
+  - [ ] `index.wxml` - 患者绑定页面
+  - [ ] `index.wxss` - 样式文件
+  - [ ] `index.json` - 页面配置
+- [ ] 实现扫码功能
+- [ ] 实现表单验证
+- [ ] 实现提交绑定
+
+### ✅ 9. 二维码扫描功能
+- [ ] 创建 `wechat/miniapp/pages/scan/` 目录
+  - [ ] `index.js` - 扫码逻辑
+  - [ ] `index.wxml` - 扫码页面
+  - [ ] `index.wxss` - 样式文件
+- [ ] 实现二维码识别
+- [ ] 实现二维码验证
+- [ ] 实现跳转到对应页面
+
+### ✅ 10. 通用组件
+- [ ] 创建 `wechat/miniapp/components/` 目录
+  - [ ] `form-input/` - 表单输入组件
+  - [ ] `loading/` - 加载组件
+  - [ ] `toast/` - 提示组件
+
+---
+
+## 阶段三：测试与优化
+
+### ✅ 11. 功能测试
+- [ ] 测试医生注册完整流程
+- [ ] 测试患者绑定完整流程
+- [ ] 测试二维码过期处理
+- [ ] 测试重复绑定处理
+- [ ] 测试错误处理
+
+### ✅ 12. 安全优化
+- [ ] 验证微信OpenID来源
+- [ ] 添加请求频率限制
+- [ ] 添加数据验证
+- [ ] 添加日志记录
+
+### ✅ 13. 文档完善
+- [ ] 编写API文档
+- [ ] 编写小程序使用文档
+- [ ] 编写部署文档
+
+---
+
+## 当前进度
+
+- [x] 创建 TODO 清单
+- [x] 完成数据库迁移脚本
+- [x] 完成后端服务层（WeChatQrCodeService, WeChatUserService, WeChatPatientService）
+- [x] 完成API控制器（WeChatMiniappController）
+- [x] 完成路由集成
+- [x] 完成小程序项目基础结构
+- [x] 完成医生注册页面和逻辑
+- [x] 完成患者绑定页面和逻辑
+- [x] 完成二维码扫描功能
+- [x] 完成API调用封装
+- [ ] 测试完整流程（待测试）
+
+---
+
+## 注意事项
+
+1. 所有后端代码放在 `custom/wechat_miniapp/` 目录，不影响核心代码
+2. 小程序代码放在 `wechat/miniapp/` 目录
+3. 数据库迁移脚本需要手动执行
+4. 路由通过事件系统集成，不修改现有路由文件
+5. 所有功能都是新增的，不影响现有功能
+
+---
+
+最后更新：2024年

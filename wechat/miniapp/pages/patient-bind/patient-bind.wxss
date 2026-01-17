@@ -1,0 +1,41 @@
+/* pages/patient-bind/patient-bind.wxss */
+.header {
+  text-align: center;
+  padding: 40rpx 0;
+  margin-bottom: 40rpx;
+}
+
+.title {
+  display: block;
+  font-size: 40rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 10rpx;
+}
+
+.subtitle {
+  display: block;
+  font-size: 24rpx;
+  color: #999;
+}
+
+.form {
+  background: #fff;
+  border-radius: 20rpx;
+  padding: 40rpx;
+}
+
+.picker-input {
+  display: flex;
+  align-items: center;
+  color: #333;
+}
+
+.picker-input:empty::before {
+  content: '请选择';
+  color: #999;
+}
+
+.submit-btn {
+  margin-top: 40rpx;
+}

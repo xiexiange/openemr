@@ -24,9 +24,6 @@ use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Events\PatientDemographics\UpdateEvent;
 use OpenEMR\Common\Twig\TwigContainer;
 use OpenEMR\Common\Uuid\UuidRegistry;
-use OpenEMR\Common\Session\SessionWrapperFactory;
-
-$session = SessionWrapperFactory::getInstance()->getWrapper();
 
 // make sure permissions are checked before we allow this page to be accessed.
 if (!AclMain::aclCheckCore('patients', 'demo', '', 'write')) {
@@ -36,7 +33,7 @@ if (!AclMain::aclCheckCore('patients', 'demo', '', 'write')) {
 // Session pid must be right or bad things can happen when demographics are saved!
 //
 $set_pid = $_GET["set_pid"] ?? ($_GET["pid"] ?? null);
-if ($set_pid && $set_pid != $session->get("pid")) {
+if ($set_pid && $set_pid != $_SESSION["pid"]) {
     setpid($set_pid);
 }
 

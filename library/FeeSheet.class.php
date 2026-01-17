@@ -34,7 +34,6 @@ require_once(__DIR__ . "/forms.inc.php");
 use OpenEMR\Billing\BillingUtilities;
 use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Logging\EventAuditLogger;
-use OpenEMR\Common\Session\SessionWrapperFactory;
 
 // For logging checksums set this to true.
 define('CHECKSUM_LOGGING', true);
@@ -94,7 +93,6 @@ class FeeSheet
 
     function __construct($pid = 0, $encounter = 0)
     {
-        $session = SessionWrapperFactory::getInstance()->getWrapper();
         if (empty($pid)) {
             $pid = $GLOBALS['pid'];
         }
@@ -117,7 +115,7 @@ class FeeSheet
         $this->got_warehouses = $wrow['count'] > 1;
         $wrow = sqlQuery(
             "SELECT default_warehouse FROM users WHERE username = ?",
-            [$session->get('authUser')]
+            [$_SESSION['authUser']]
         );
         $this->default_warehouse = empty($wrow['default_warehouse']) ? '' : $wrow['default_warehouse'];
 
@@ -184,8 +182,6 @@ class FeeSheet
   //
     public function findProvider()
     {
-        $session = SessionWrapperFactory::getInstance()->getWrapper();
-
         $find_provider = sqlQuery(
             "SELECT provider_id FROM form_encounter " .
             "WHERE pid = ? AND encounter = ? ORDER BY id DESC LIMIT 1",
@@ -193,9 +189,9 @@ class FeeSheet
         );
         $providerid = $find_provider['provider_id'];
         if (!$providerid) {
-            $get_authorized = $session->get('userauthorized');
+            $get_authorized = $_SESSION['userauthorized'];
             if ($get_authorized == 1) {
-                $providerid = $session->get('authUserID');
+                $providerid = $_SESSION['authUserID'];
             }
         }
 
@@ -289,7 +285,6 @@ class FeeSheet
   //
     public function logFSMessage($action, $newvalue = '', $logarr = null)
     {
-        $session = SessionWrapperFactory::getInstance()->getWrapper();
         $user_notes = $this->encounter;
         if (is_array($logarr)) {
             array_unshift($logarr, $newvalue);
@@ -300,8 +295,8 @@ class FeeSheet
 
         EventAuditLogger::getInstance()->newEvent(
             'fee-sheet',
-            $session->get('authUser'),
-            $session->get('authProvider'),
+            $_SESSION['authUser'],
+            $_SESSION['authProvider'],
             1,
             $action,
             $this->pid,
@@ -313,7 +308,6 @@ class FeeSheet
   //
     public function visitChecksum($saved = false)
     {
-        $session = SessionWrapperFactory::getInstance()->getWrapper();
         $rowb = sqlQuery(
             "SELECT BIT_XOR(CRC32(CONCAT_WS(',', " .
             "id, code, modifier, units, fee, authorized, provider_id, ndc_info, justify, billed" .
@@ -339,7 +333,7 @@ class FeeSheet
         if (CHECKSUM_LOGGING) {
             $comment = "Checksum = '$ret'";
             $comment .= ", Saved = " . ($saved ? "true" : "false");
-            EventAuditLogger::getInstance()->newEvent("checksum", $session->get('authUser'), $session->get('authProvider'), 1, $comment, $this->pid);
+            EventAuditLogger::getInstance()->newEvent("checksum", $_SESSION['authUser'], $_SESSION['authProvider'], 1, $comment, $this->pid);
         }
         return $ret;
     }
@@ -403,11 +397,10 @@ class FeeSheet
     //
     public function insert_lbf_item($field_id, $field_value)
     {
-        $session = SessionWrapperFactory::getInstance()->getWrapper();
         sqlInsert(
             "INSERT INTO shared_attributes (pid, encounter, last_update, user_id, field_id, field_value) " .
             "VALUES (?, ?, 'NOW()', ?, ?, ?)",
-            [$this->pid, $this->encounter, $session->get('authId'), $field_id, $field_value]
+            [$this->pid, $this->encounter, $_SESSION['authId'], $field_id, $field_value]
         );
     }
 
@@ -926,7 +919,6 @@ class FeeSheet
         $default_warehouse = null,
         $mark_as_closed = false
     ) {
-        $session = SessionWrapperFactory::getInstance()->getWrapper();
         global $code_types;
 
         if (isset($main_provid) && $main_supid == $main_provid) {
@@ -990,7 +982,7 @@ class FeeSheet
                             sqlStatement(
                                 "UPDATE ar_session SET user_id = ?, pay_total = ?, modified_time = now(), " .
                                 "post_to_date = now() WHERE session_id = ?",
-                                [$session->get('authUserID'), $fee, $session_id]
+                                [$_SESSION['authUserID'], $fee, $session_id]
                             );
                         }
                         // deleting old copay
@@ -1006,7 +998,7 @@ class FeeSheet
                             "(payer_id, user_id, pay_total, payment_type, description, patient_id, payment_method, " .
                             "adjustment_code, post_to_date) " .
                             "VALUES ('0',?,?,'patient','COPAY',?,'','patient_payment',now())",
-                            [$session->get('authUserID'), $fee, $this->pid]
+                            [$_SESSION['authUserID'], $fee, $this->pid]
                         );
                     }
                     // adding new or changed copay from fee sheet into ar_activity
@@ -1018,7 +1010,7 @@ class FeeSheet
                         "payer_type, post_time, post_user, session_id, pay_amount, account_code) " .
                         "VALUES (?,?,?,?,?,?,0,now(),?,?,?,'PCP')",
                         [$this->pid, $this->encounter, $sequence_no['increment'], $ct0, $cod0, $mod0,
-                            $session->get('authUserID'), $session_id, $fee]
+                            $_SESSION['authUserID'], $session_id, $fee]
                     );
                     sqlCommitTrans();
 

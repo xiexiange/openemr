@@ -19,9 +19,6 @@
 
 require_once(__DIR__ . "/sqlconf.php");
 
-use OpenEMR\Common\Session\SessionWrapperFactory;
-$session = SessionWrapperFactory::getInstance()->getWrapper();
-
 /**
  * Variables set by sqlconf.php or SqlConfigEvent
  *
@@ -80,7 +77,7 @@ if (!defined('OPENEMR_STATIC_ANALYSIS') || !OPENEMR_STATIC_ANALYSIS) {
         }
     }
     $database->port = $port;
-    if ((!empty($GLOBALS["enable_database_connection_pooling"]) || !empty($session->get("enable_database_connection_pooling"))) && empty($GLOBALS['connection_pooling_off'])) {
+    if ((!empty($GLOBALS["enable_database_connection_pooling"]) || !empty($_SESSION["enable_database_connection_pooling"])) && empty($GLOBALS['connection_pooling_off'])) {
         $database->PConnect($host, $login, $pass, $dbase);
     } else {
         $database->connect($host, $login, $pass, $dbase);
@@ -774,7 +771,6 @@ function sqlRollbackTrans(): void
  */
 function getPrivDB()
 {
-    $session = SessionWrapperFactory::getInstance()->getWrapper();
     if (!isset($GLOBALS['PRIV_DB'])) {
         $secure_config = $GLOBALS['OE_SITE_DIR'] . "/secure_sqlconf.php";
         if (file_exists($secure_config)) {
@@ -817,7 +813,7 @@ function getPrivDB()
             // $port variable is from main sqlconf.php (global scope)
             global $port;
             $GLOBALS['PRIV_DB']->port = $port;
-            if ((!empty($GLOBALS["enable_database_connection_pooling"]) || !empty($session->get("enable_database_connection_pooling"))) && empty($GLOBALS['connection_pooling_off'])) {
+            if ((!empty($GLOBALS["enable_database_connection_pooling"]) || !empty($_SESSION["enable_database_connection_pooling"])) && empty($GLOBALS['connection_pooling_off'])) {
                 $GLOBALS['PRIV_DB']->PConnect($secure_host, $secure_login, $secure_pass, $secure_dbase);
             } else {
                 $GLOBALS['PRIV_DB']->connect($secure_host, $secure_login, $secure_pass, $secure_dbase);

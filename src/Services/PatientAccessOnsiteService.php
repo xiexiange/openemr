@@ -216,8 +216,13 @@ class PatientAccessOnsiteService
         $trustedEmail = $this->getTrustedEmailForPid($pid);
         $row = $this->getOnsiteCredentialsForPid($pid);
         $trustedUserName = $trustedEmail['email_direct'];
-// check for duplicate username
-        $dup_check = sqlQueryNoLog("SELECT * FROM patient_access_onsite WHERE pid != ? AND portal_login_username = ?", [$pid, $trustedUserName]);
+// check for duplicate username - only check against active patients (pid exists in patient_data)
+        $dup_check = sqlQueryNoLog(
+            "SELECT pao.* FROM patient_access_onsite AS pao 
+             INNER JOIN patient_data AS pd ON pao.pid = pd.pid 
+             WHERE pao.pid != ? AND pao.portal_login_username = ?",
+            [$pid, $trustedUserName]
+        );
 // make unique if needed
         if (!empty($dup_check)) {
             if (strpos((string) $trustedUserName, '@')) {

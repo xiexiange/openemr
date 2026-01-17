@@ -22,7 +22,6 @@ use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Common\Forms\Types\EncounterListOptionType;
 use OpenEMR\Common\Layouts\LayoutsUtils;
 use OpenEMR\Common\Utils\CacheUtils;
-use OpenEMR\Common\Session\SessionWrapperFactory;
 use OpenEMR\Core\Header;
 use OpenEMR\Core\Kernel;
 use OpenEMR\Core\OEGlobalsBag;
@@ -57,14 +56,13 @@ class TwigExtension extends AbstractExtension implements GlobalsInterface
 
     public function getGlobals(): array
     {
-        $session = SessionWrapperFactory::getInstance()->getWrapper();
         return [
             'assets_dir' => $this->globals->get('assets_static_relative'),
             'srcdir' => $this->globals->get('srcdir'),
             'rootdir' => $this->globals->get('rootdir'),
             'webroot' => $this->globals->get('webroot'),
             'assetVersion' => $this->globals->get('v_js_includes'),
-            'session' => $session->all(),
+            'session' => $_SESSION ?? [],
         ];
     }
 
@@ -72,13 +70,12 @@ class TwigExtension extends AbstractExtension implements GlobalsInterface
     {
         return [
             // can be used like {% if is numeric %}...{% endif %}
-            new TwigTest('numeric', is_numeric(...))
+            new TwigTest('numeric', fn($value): bool => is_numeric($value))
         ];
     }
 
     public function getFunctions(): array
     {
-        $session = SessionWrapperFactory::getInstance()->getWrapper();
         return [
             new TwigFunction(
                 'setupHeader',
@@ -177,11 +174,11 @@ class TwigExtension extends AbstractExtension implements GlobalsInterface
             ),
             new TwigFunction(
                 'csrfToken',
-                function ($subject = 'default', $fieldName = "_token") use ($session) {
+                function ($subject = 'default', $fieldName = "_token") {
                     if (empty($subject)) {
                         $subject = 'default';
                     }
-                    return sprintf('<input type="hidden" name="%s" value="%s">', $fieldName, attr(CsrfUtils::collectCsrfToken($subject, $session->getSymfonySession())));
+                    return sprintf('<input type="hidden" name="%s" value="%s">', $fieldName, attr(CsrfUtils::collectCsrfToken($subject)));
                 }
             ),
             new TwigFunction(
@@ -259,7 +256,7 @@ class TwigExtension extends AbstractExtension implements GlobalsInterface
             ),
             new TwigFunction(
                 'uniqid',
-                uniqid(...)
+                fn(string $prefix = "", bool $more_entropy = false): string => uniqid($prefix, $more_entropy)
             )
         ];
     }

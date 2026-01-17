@@ -15,14 +15,11 @@ require_once("$srcdir/options.inc.php");
 require_once("$srcdir/immunization_helper.php");
 
 use OpenEMR\Services\FacilityService;
-use OpenEMR\Common\Session\SessionWrapperFactory;
-
-$session = SessionWrapperFactory::getInstance()->getWrapper();
 
 $facilityService = new FacilityService();
 
 //collect facility data
-$res = $facilityService->getFacilityForUserFormatted($session->get('authUserID'));
+$res = $facilityService->getFacilityForUserFormatted($_SESSION['authUserID']);
 
 //collect patient data
 $res2 = sqlQuery("select concat(p.lname,', ',p.fname,' ',p.mname) patient_name " .

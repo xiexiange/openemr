@@ -14,12 +14,9 @@ require_once(__DIR__ . "/../../globals.php");
 require_once("$srcdir/clinical_rules.php");
 
 use OpenEMR\Common\Csrf\CsrfUtils;
-use OpenEMR\Common\Session\SessionWrapperFactory;
 
-$session = SessionWrapperFactory::getInstance()->getWrapper();
-
-if (!CsrfUtils::verifyCsrfToken($_POST["csrf_token_form"], 'default', $session->getSymfonySession())) {
+if (!CsrfUtils::verifyCsrfToken($_POST["csrf_token_form"])) {
     CsrfUtils::csrfNotVerified();
 }
 
-clinical_summary_widget($pid, "reminders-due", '', 'default', $session->get('authUser'));
+clinical_summary_widget($pid, "reminders-due", '', 'default', $_SESSION['authUser']);

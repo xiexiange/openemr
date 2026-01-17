@@ -19,11 +19,7 @@ require_once("$srcdir/options.inc.php");
 require_once("$srcdir/clinical_rules.php");
 
 use OpenEMR\Common\Csrf\CsrfUtils;
-use OpenEMR\Common\Session\SessionWrapperFactory;
 use OpenEMR\Core\Header;
-
-$session = SessionWrapperFactory::getInstance()->getWrapper();
-
 ?>
 
 <html>
@@ -56,7 +52,7 @@ $patient_id = $_GET['patient_id'] ?: "";
 <?php
   // collect the pertinent plans and rules
   $plans_default = resolve_plans_sql('', '0', true);
-  $rules_default = resolve_rules_sql('', '0', true, '', $session->get('authUser'));
+  $rules_default = resolve_rules_sql('', '0', true, '', $_SESSION['authUser']);
 ?>
 
 <ul class="tabNav">
@@ -68,13 +64,13 @@ $patient_id = $_GET['patient_id'] ?: "";
 <div class="tabContainer">
   <div class="tab current text h-auto" style="width: 97%;">
     <?php
-      clinical_summary_widget($pid, "reminders-all", '', 'default', $session->get('authUser'));
+      clinical_summary_widget($pid, "reminders-all", '', 'default', $_SESSION['authUser']);
     ?>
   </div>
 
   <div class="tab text h-auto" style="width: 97%;">
     <?php
-      clinical_summary_widget($pid, "reminders-all", '', "plans", $session->get('authUser'));
+      clinical_summary_widget($pid, "reminders-all", '', "plans", $_SESSION['authUser']);
     ?>
   </div>
 
@@ -93,7 +89,7 @@ $patient_id = $_GET['patient_id'] ?: "";
         <?php foreach ($plans_default as $plan) { ?>
             <?php
           //only show the plan if there are any rules in it that the user has access to
-            $plan_check = resolve_rules_sql('', '0', true, $plan['id'], $session->get('authUser'));
+            $plan_check = resolve_rules_sql('', '0', true, $plan['id'], $_SESSION['authUser']);
             if (empty($plan_check)) {
                 continue;
             }
@@ -239,7 +235,7 @@ $patient_id = $_GET['patient_id'] ?: "";
         type: 'passive_alert',
         setting: this.value,
         patient_id: <?php echo js_escape($patient_id); ?>,
-        csrf_token_form: <?php echo js_escape(CsrfUtils::collectCsrfToken('default', $session->getSymfonySession())); ?>
+        csrf_token_form: <?php echo js_escape(CsrfUtils::collectCsrfToken()); ?>
       });
     });
 
@@ -250,7 +246,7 @@ $patient_id = $_GET['patient_id'] ?: "";
         type: 'active_alert',
         setting: this.value,
         patient_id: <?php echo js_escape($patient_id); ?>,
-        csrf_token_form: <?php echo js_escape(CsrfUtils::collectCsrfToken('default', $session->getSymfonySession())); ?>
+        csrf_token_form: <?php echo js_escape(CsrfUtils::collectCsrfToken()); ?>
       });
     });
 
@@ -261,7 +257,7 @@ $patient_id = $_GET['patient_id'] ?: "";
         type: 'normal',
         setting: this.value,
         patient_id: <?php echo js_escape($patient_id); ?>,
-        csrf_token_form: <?php echo js_escape(CsrfUtils::collectCsrfToken('default', $session->getSymfonySession())); ?>
+        csrf_token_form: <?php echo js_escape(CsrfUtils::collectCsrfToken()); ?>
       });
     });
 

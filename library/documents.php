@@ -22,7 +22,7 @@
  */
 
 require_once($GLOBALS['fileroot'] . "/controllers/C_Document.class.php");
-use OpenEMR\Common\Session\SessionWrapperFactory;
+
 /**
  * Function to add a document via the C_Document class.
  *
@@ -54,8 +54,7 @@ function addNewDocument(
 ) {
 
     if (empty($owner)) {
-        $session = SessionWrapperFactory::getInstance()->getWrapper();
-        $owner = $session->get('authUserID');
+        $owner = $_SESSION['authUserID'];
     }
 
     // Build the $_FILES array

@@ -66,9 +66,6 @@ namespace OpenEMR\Common\Session;
 
 use OpenEMR\Common\Logging\SystemLogger;
 use OpenEMR\Common\Session\Predis\SentinelUtil;
-use Symfony\Component\HttpFoundation\Session\Session;
-use Symfony\Component\HttpFoundation\Session\Storage\NativeSessionStorage;
-use Symfony\Component\HttpFoundation\Cookie;
 
 class SessionUtil
 {
@@ -77,17 +74,11 @@ class SessionUtil
 
     public const API_SESSION_ID = 'apiOpenEMR';
 
-    public const PORTAL_SESSION_ID = 'PortalOpenEMR';
-
-    public const APP_COOKIE_NAME = 'App';
-
     public const API_WEBROOT = '/apis/';
 
     public const OAUTH_WEBROOT = '/oauth2/';
 
     public const DEFAULT_GC_MAXLIFETIME = 14400; // 4 hours
-
-    private static array $SESSION_INSTANCES = [];
 
     // Following setting have been deprecated in PHP 8.4 and higher
     // (ie. will remove them when PHP 8.4 is the minimum requirement)
@@ -128,20 +119,11 @@ class SessionUtil
         if (is_array($session_key_or_array)) {
             foreach ($session_key_or_array as $key => $value) {
                 $_SESSION[$key] = $value;
-                foreach (self::$SESSION_INSTANCES as $symfonySessionInstance) {
-                    $symfonySessionInstance->set($key, $value);
-                }
             }
         } else {
             $_SESSION[$session_key_or_array] = $session_value;
-            foreach (self::$SESSION_INSTANCES as $symfonySessionInstance) {
-                $symfonySessionInstance->set($session_key_or_array, $session_value);
-            }
         }
         session_write_close();
-        foreach (self::$SESSION_INSTANCES as $symfonySessionInstance) {
-            $symfonySessionInstance->save();
-        }
         (new SystemLogger())->debug("SessionUtil: set session value", [
             'session_key_or_array' => $session_key_or_array,
             'session_value' => $session_value
@@ -154,15 +136,9 @@ class SessionUtil
         if (is_array($session_key_or_array)) {
             foreach ($session_key_or_array as $value) {
                 unset($_SESSION[$value]);
-                foreach (self::$SESSION_INSTANCES as $symfonySessionInstance) {
-                    $symfonySessionInstance->remove($value);
-                }
             }
         } else {
             unset($_SESSION[$session_key_or_array]);
-            foreach (self::$SESSION_INSTANCES as $symfonySessionInstance) {
-                $symfonySessionInstance->remove($session_key_or_array);
-            }
         }
         session_write_close();
         (new SystemLogger())->debug("SessionUtil: unset session value", [
@@ -175,15 +151,9 @@ class SessionUtil
         self::coreSessionStart($GLOBALS['webroot'], false);
         foreach ($setArray as $key => $value) {
             $_SESSION[$key] = $value;
-            foreach (self::$SESSION_INSTANCES as $symfonySessionInstance) {
-                $symfonySessionInstance->set($key, $value);
-            }
         }
         foreach ($unsetArray as $value) {
             unset($_SESSION[$value]);
-            foreach (self::$SESSION_INSTANCES as $symfonySessionInstance) {
-                $symfonySessionInstance->remove($value);
-            }
         }
         session_write_close();
         (new SystemLogger())->debug("SessionUtil: set numerous session values", $setArray);
@@ -196,45 +166,18 @@ class SessionUtil
         (new SystemLogger())->debug("SessionUtil: destroyed core session");
     }
 
-    public static function portalSessionStart(): Session
-    {
-        if (array_key_exists(self::PORTAL_SESSION_ID, self::$SESSION_INSTANCES)) {
-            (new SystemLogger())->debug("SessionUtil: started portal session");
-            return self::$SESSION_INSTANCES[self::PORTAL_SESSION_ID];
-        }
-
-        $settings = SessionConfigurationBuilder::forPortal();
-
-        $storage = new NativeSessionStorage($settings);
-        $session = new Session($storage);
-        if (!$session->isStarted()) {
-            $session->start();
-        }
-
-        self::$SESSION_INSTANCES[self::PORTAL_SESSION_ID] = $session;
-
-        (new SystemLogger())->debug("SessionUtil: started portal session");
-
-        return $session;
-    }
-
-    public static function portalPredisSessionStart(): void
+    public static function portalSessionStart(): void
     {
         $settings = SessionConfigurationBuilder::forPortal();
         self::sessionStartWrapper($settings);
-
-        (new SystemLogger())->debug("SessionUtil: started portal predis session");
+        (new SystemLogger())->debug("SessionUtil: started portal session");
     }
 
     public static function portalSessionCookieDestroy(): void
     {
-        if (array_key_exists(self::PORTAL_SESSION_ID, self::$SESSION_INSTANCES)) {
-            $session = self::$SESSION_INSTANCES[self::PORTAL_SESSION_ID];
-            if ($session) {
-                $session->invalidate();
-                unset(self::$SESSION_INSTANCES[self::PORTAL_SESSION_ID]);
-            }
-        }
+        // Note there is no system logger here since that class does not
+        //  yet exist in this context.
+        self::standardSessionCookieDestroy();
         (new SystemLogger())->debug("SessionUtil: destroyed portal session");
     }
 
@@ -309,30 +252,5 @@ class SessionUtil
         (new SystemLogger())->debug("SessionUtil: destroyed session and cookie", [
             'session_name' => $sessionName,
         ]);
-    }
-
-    public static function setAppCookie(string $appType): void
-    {
-        setcookie(
-            self::APP_COOKIE_NAME,
-            $appType,
-            [
-                'expires' => time() + 3600,
-                'path' => '/',
-                'secure' => true,
-                'httponly' => true,
-                'samesite' => Cookie::SAMESITE_STRICT
-            ]
-        );
-    }
-
-    public static function getAppCookie(): string
-    {
-        return $_COOKIE['App'] ?? '';
-    }
-
-    public static function isPredisSession(): bool
-    {
-        return !empty(getenv('SESSION_STORAGE_MODE', true)) && getenv('SESSION_STORAGE_MODE', true) === "predis-sentinel";
     }
 }

@@ -15,7 +15,6 @@
 namespace OpenEMR\Common\Session;
 
 use OpenEMR\Services\FormService;
-use OpenEMR\Common\Session\SessionWrapperFactory;
 
 class EncounterSessionUtil
 {
@@ -27,9 +26,7 @@ class EncounterSessionUtil
 
         $formsService = new FormService();
 
-        $session = SessionWrapperFactory::getInstance()->getWrapper();
-
-        $attendant_id = $attendant_type === 'pid' ? $pid : $session->get('therapy_group');
+        $attendant_id = $attendant_type === 'pid' ? $pid : $_SESSION['therapy_group'];
 
         // Forcing enc through an integer to protect from sql injection
         $enc = (string) intval($enc);

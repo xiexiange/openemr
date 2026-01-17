@@ -17,6 +17,9 @@
 
 use OpenEMR\Common\Crypto\CryptoGen;
 
+// Include global functions
+require_once(__DIR__ . "/../../../../../library/global_functions.php");
+
 // If to use utf-8 or not in my sql query
 if (!$GLOBALS['disable_utf8_flag']) {
     if (!empty($GLOBALS["db_encoding"]) && ($GLOBALS["db_encoding"] == "utf8mb4")) {
@@ -111,21 +114,3 @@ return [
 
 
 
-/**
- * DEPRECATED; just keeping this for backward compatibility.
- *
- * Decrypts the string
- * @param $value
- * @return bool|string
- *
- * DEPRECATED; just keeping this for backward compatibility.
- */
-
-function my_decrypt($data)
-{
-    // Remove the base64 encoding from our key
-    $encryption_key = base64_decode((string) $GLOBALS['safe_key_database']);
-    // To decrypt, split the encrypted data from our IV - our unique separator used was "::"
-    [$encrypted_data, $iv] = explode('::', base64_decode((string) $data), 2);
-    return openssl_decrypt($encrypted_data, 'aes-256-cbc', $encryption_key, 0, $iv);
-}

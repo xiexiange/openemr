@@ -463,11 +463,39 @@ if ($is_expired) {
 
 // Will set Session variables to communicate settings to tab layout
 $_SESSION['default_open_tabs'] = $_tabs;
+
 // mdsupport - Apps processing invoked for valid app selections from list
-if ((isset($_POST['appChoice'])) && ($_POST['appChoice'] !== '*OpenEMR')) {
+if (!empty($_POST['appChoice']) && $_POST['appChoice'] !== '*OpenEMR') {
     $_SESSION['app1'] = $_POST['appChoice'];
+
+    // H5：跳到 interface/mobile 目录下复制出来的 tabs 主页面
+    if ($_POST['appChoice'] === 'H5') {
+        // H5：默认使用中文界面（优先简体，其次繁体；找不到则保持系统默认）
+        try {
+            $langRow = sqlQuery(
+                "SELECT lang_id FROM lang_languages WHERE lang_description IN (?, ?) ORDER BY FIELD(lang_description, ?, ?) LIMIT 1",
+                ['Chinese (Simplified)', 'Chinese (Traditional)', 'Chinese (Simplified)', 'Chinese (Traditional)']
+            );
+            if (!empty($langRow['lang_id'])) {
+                $_SESSION['language_choice'] = (int) $langRow['lang_id'];
+            }
+        } catch (Throwable $e) {
+            // 如果语言表不可用/查询失败，则不影响正常跳转
+        }
+
+        // 和原流程一样，先生成 token_main_php
+        $_SESSION['token_main_php'] = RandomGenUtils::createUniqueToken();
+        header(
+            'Location: ' . $web_root
+            . "/interface/mobile/main/tabs/main.php?token_main="
+            . urlencode($_SESSION['token_main_php'])
+        );
+        exit();
+    }
 }
 
+
+// 默认行为：跳转到桌面 tabs UI
 // Pass a unique token, so main.php script can not be run on its own
 $_SESSION['token_main_php'] = RandomGenUtils::createUniqueToken();
 header('Location: ' . $web_root . "/interface/main/tabs/main.php?token_main=" . urlencode($_SESSION['token_main_php']));

@@ -1,0 +1,25 @@
+<!--pages/index/index.wxml-->
+<view class="container">
+  <view class="header">
+    <text class="title">OpenEMR 医疗系统</text>
+    <text class="subtitle">请选择您的身份</text>
+  </view>
+
+  <view class="options">
+    <view class="option-card" bindtap="chooseDoctor">
+      <image class="icon" src="/images/doctor.png" mode="aspectFit"></image>
+      <text class="option-title">医生注册</text>
+      <text class="option-desc">扫码完成医生账号注册</text>
+    </view>
+
+    <view class="option-card" bindtap="choosePatient">
+      <image class="icon" src="/images/patient.png" mode="aspectFit"></image>
+      <text class="option-title">患者绑定</text>
+      <text class="option-desc">扫码绑定您的医生</text>
+    </view>
+  </view>
+
+  <view class="scan-btn" bindtap="scanCode">
+    <text>扫码</text>
+  </view>
+</view>

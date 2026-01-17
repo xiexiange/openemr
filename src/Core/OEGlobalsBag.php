@@ -33,6 +33,14 @@ class OEGlobalsBag extends ParameterBag
         return self::$instance;
     }
 
+    /**
+     * Reset the singleton instance (useful for testing)
+     */
+    public static function resetInstance(): void
+    {
+        self::$instance = null;
+    }
+
     public function __construct(array $parameters = [])
     {
         parent::__construct($parameters);

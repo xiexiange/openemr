@@ -213,9 +213,25 @@ if ($popup) {
     $patientSelectFilterEvent = new PatientSelectFilterEvent(new BoundFilter());
     $patientSelectFilterEvent = $GLOBALS["kernel"]->getEventDispatcher()->dispatch($patientSelectFilterEvent, PatientSelectFilterEvent::EVENT_HANDLE, 10);
     $boundFilter = $patientSelectFilterEvent->getBoundFilter();
-    $sqlBindArray = array_merge($boundFilter->getBoundValues(), $sqlBindArray);
     $customWhere = $boundFilter->getFilterClause();
+    $customBindValues = $boundFilter->getBoundValues();
 
+    // Restrict patients to those assigned to the current logged-in provider
+    // Admin users can see all patients
+    if (!empty($_SESSION['authUserID']) && ($_SESSION['authUser'] ?? '') != 'admin') {
+        $providerID = $_SESSION['authUserID'];
+        if (empty($customWhere)) {
+            $customWhere = "providerID = ?";
+            $customBindValues = [$providerID];
+        } else {
+            $customWhere = "($customWhere) AND providerID = ?";
+            $customBindValues[] = $providerID;
+        }
+        $boundFilter->setFilterClause($customWhere);
+        $boundFilter->setBoundValues($customBindValues);
+    }
+
+    $sqlBindArray = array_merge($customBindValues, $sqlBindArray);
     $where = empty($where) ? $customWhere : "$customWhere AND $where";
 
     $sql = "SELECT $given FROM patient_data " .
@@ -227,7 +243,7 @@ if ($popup) {
         $result[] = $row;
     }
 
-    _set_patient_inc_count($sqllimit, count($result), "$customWhere AND $where", $sqlBindArray);
+    _set_patient_inc_count($sqllimit, count($result), $where, $sqlBindArray);
 } elseif ($from_page == "cdr_report") {
   // Collect setting from cdr report
     echo "<input type='hidden' name='from_page' value='" . attr($from_page) . "' />\n";
