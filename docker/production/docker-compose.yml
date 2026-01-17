@@ -32,8 +32,14 @@ services:
     volumes:
     - logvolume01:/var/log
     - sitevolume:/var/www/localhost/htdocs/openemr/sites
-    # 代码挂载 - 将本地代码挂载到容器中，这样拉取最新代码后重启容器即可生效
-    - ../..:/var/www/localhost/htdocs/openemr:rw
+    # 代码挂载 - 只挂载需要更新的代码目录，避免覆盖容器内的启动脚本
+    - ../../interface:/var/www/localhost/htdocs/openemr/interface:rw
+    - ../../library:/var/www/localhost/htdocs/openemr/library:rw
+    - ../../templates:/var/www/localhost/htdocs/openemr/templates:rw
+    - ../../portal:/var/www/localhost/htdocs/openemr/portal:rw
+    - ../../public:/var/www/localhost/htdocs/openemr/public:rw
+    - ../../config:/var/www/localhost/htdocs/openemr/config:rw
+    - ../../src:/var/www/localhost/htdocs/openemr/src:rw
     environment:
       MYSQL_HOST: mysql
       MYSQL_ROOT_PASS: root
