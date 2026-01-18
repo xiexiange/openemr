@@ -714,9 +714,19 @@ function dlgopen(url, winname, width, height, forceNewWindow, title, opts) {
                 });
             }
             // events chain.
-            dlgContainer.on('show.bs.modal', function () {
+            // Remove any existing handlers first to prevent duplicate bindings
+            dlgContainer.off('show.bs.modal shown.bs.modal hide.bs.modal hidden.bs.modal');
+            dlgContainer.on('show.bs.modal', function (e) {
+                // Prevent infinite recursion by checking if already showing
+                if (dlgContainer.hasClass('show')) {
+                    return;
+                }
                 if (opts.allowResize || opts.allowDrag) {
-                    initDragResize(where.document, where.document);
+                    try {
+                        initDragResize(where.document, where.document);
+                    } catch (err) {
+                        console.warn('initDragResize failed (interact.js may not be loaded):', err);
+                    }
                 }
 
                 if (opts.resolvePromiseOn === 'show') {
@@ -797,7 +807,20 @@ function dlgopen(url, winname, width, height, forceNewWindow, title, opts) {
                 resolve(dlgContainer);
             }
             // Finally Show Dialog after DOM settles
-            dlgContainer.modal({backdrop: 'static', keyboard: true}, 'show');
+            // Fix: Use proper Bootstrap 4 jQuery modal API to avoid infinite recursion
+            // Check if modal is already showing to prevent duplicate calls
+            if (!dlgContainer.hasClass('show')) {
+                dlgContainer.modal({
+                    backdrop: 'static',
+                    keyboard: true
+                });
+                // Use setTimeout to avoid event loop issues
+                setTimeout(function() {
+                    if (!dlgContainer.hasClass('show')) {
+                        dlgContainer.modal('show');
+                    }
+                }, 10);
+            }
         }); // end events
     }); /* Returning Promise */
 

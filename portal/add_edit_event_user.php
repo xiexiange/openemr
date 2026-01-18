@@ -60,13 +60,26 @@ $patientid = $_GET['patid'] ?? null;
 //
 
 // did someone tamper with eid?
-$checkEidInAppt = false;
-$patient_appointments = fetchAppointments('1970-01-01', '2382-12-31', $pid);
-$checkEidInAppt = array_search($eid, array_column($patient_appointments, 'pc_eid'));
-
-if ($eid !== 0 && $checkEidInAppt === false) {
-    echo js_escape("error");
-    exit();
+// Only check eid if it's not 0 (new appointment)
+if ($eid !== 0) {
+    $checkEidInAppt = false;
+    try {
+        $patient_appointments = fetchAppointments('1970-01-01', '2382-12-31', $pid);
+        if (is_array($patient_appointments) && !empty($patient_appointments)) {
+            $pc_eid_column = array_column($patient_appointments, 'pc_eid');
+            if (is_array($pc_eid_column)) {
+                $checkEidInAppt = array_search($eid, $pc_eid_column);
+            }
+        }
+    } catch (Exception $e) {
+        // Log error but don't block new appointments
+        error_log("Error fetching appointments: " . $e->getMessage());
+    }
+    
+    if ($checkEidInAppt === false) {
+        echo js_escape("error");
+        exit();
+    }
 }
 
 if (!empty($_POST['form_pid'])) {
@@ -854,7 +867,8 @@ if ($userid) {
                         {text: <?php echo xlj('Cancel'); ?>, close: true, style: 'danger btn-sm'}
 
                     ],
-                    allowResize: true,
+                    allowResize: false,
+                    allowDrag: false,
                     dialogId: 'apptDialog',
                     type: 'iframe'
                 };
