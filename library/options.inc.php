@@ -625,7 +625,16 @@ function generate_form_field($frow, $currvalue): void
     }
 
     // Support using the description as a placeholder
-    $placeholder = (isOption($edit_options, 'DAP') === true) ? " placeholder='{$description}' " : '';
+    // Exclude placeholder for fname/lname in doctor portal (CN naming: already have label "名字"/"姓")
+    if (isOption($edit_options, 'DAP') === true && in_array($field_id, ['fname', 'lname'], true)) {
+        if (in_array($field_id, ['fname'], true)) {
+            $placeholder = " placeholder='姓' ";
+        } else if (in_array($field_id, ['lname'], true)) {
+            $placeholder = " placeholder='名' ";
+        }
+    } else {
+        $placeholder = (isOption($edit_options, 'DAP') === true) ? " placeholder='{$description}' " : '';
+    }
 
     // added 5-2009 by BM to allow modification of the 'empty' text title field.
     //  Can pass $frow['empty_title'] with this variable, otherwise
