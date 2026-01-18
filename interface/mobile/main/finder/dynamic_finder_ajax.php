@@ -291,18 +291,20 @@ while ($row = sqlFetchArray($res)) {
     $arow = ['DT_RowId' => 'pid_' . $row['pid']];
     foreach ($aColumns as $colname) {
         if ($colname == 'name') {
-            $name = $row['lname'];
-            if ($name && $row['fname']) {
-                $name .= ', ';
-            }
-
+            // Display format: First Name + Last Name (姓+名)
+            $name = '';
             if ($row['fname']) {
                 $name .= $row['fname'];
             }
 
-            if ($row['mname']) {
-                $name .= ' ' . $row['mname'];
+            if ($row['lname']) {
+                $name .= $row['lname'];
             }
+
+            // Middle name is typically not used in Chinese naming, but keep for compatibility
+            // if ($row['mname']) {
+            //     $name .= ' ' . $row['mname'];
+            // }
 
             $arow[] = attr($name);
         } else {
