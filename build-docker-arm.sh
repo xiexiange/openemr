@@ -39,13 +39,7 @@ mkdir -p "$OUTPUT_DIR" "$TEMP_DIR"
 
 # 定义需要打包的镜像
 IMAGES=(
-    "axllent/mailpit:latest"
-    "couchdb:latest"
-    "selenium/standalone-chromium:4.39.0"
-    "openemr/dev-ldap:easy"
-    "openemr/openemr:7.0.4"
-    "openemr/openemr:flex"
-    "mariadb:11.8"
+    "phpmyadmin:latest"
 )
 
 # 检查镜像平台的函数
