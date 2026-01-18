@@ -37,9 +37,15 @@ if (isset($_GET['term'])) {
     } elseif ($is_rxcui) {
         $sql = "SELECT `code_text` as name, `code` as rxnorm FROM `codes` WHERE `code_text` LIKE ? AND `code_type` = ? GROUP BY `code` ORDER BY `code_text` LIMIT 100";
     } else {
-        $sql = "SELECT `name`, `drug_code` as rxnorm FROM `drugs` WHERE `name` LIKE ? GROUP BY `drug_code` ORDER BY `name` LIMIT 100";
+        // Search from Inventory Management (drugs table) with fuzzy matching
+        // Support searching for drugs like "drug" matching "drug1", "drug2", "drug3"
+        $sql = "SELECT `drug_id`, `name`, `ndc_number`, `form`, `size`, `unit`, `drug_code` as rxnorm 
+                FROM `drugs` 
+                WHERE `active` = 1 AND `name` LIKE ? 
+                ORDER BY `name` LIMIT 100";
     }
-    $val = [$term . '%'];
+    // Use %term% for fuzzy search instead of term% for prefix-only search
+    $val = ['%' . $term . '%'];
     if ($is_rxcui) {
         $code_type = sqlQuery("SELECT ct_id FROM `code_types` WHERE `ct_key` = ? AND `ct_active` = 1", ['RXCUI']);
         $val = [$term . '%', $code_type['ct_id']];
@@ -49,10 +55,39 @@ if (isset($_GET['term'])) {
     }
     $res = sqlStatement($sql, $val);
     while ($row = sqlFetchArray($res)) {
+        // Build display name with drug details
+        $display_parts = [text($row['name'])];
+        
+        // Add size and unit if available
+        if (!empty($row['size']) && !empty($row['unit'])) {
+            $display_parts[] = $row['size'] . $row['unit'];
+        } elseif (!empty($row['size'])) {
+            $display_parts[] = $row['size'];
+        }
+        
+        // Add form if available
+        if (!empty($row['form']) && $row['form'] != '0') {
+            // Get form name from list_options if possible
+            $form_name = $row['form'];
+            $form_query = sqlQuery("SELECT title FROM list_options WHERE list_id = 'drug_form' AND option_id = ?", [$row['form']]);
+            if ($form_query) {
+                $form_name = $form_query['title'];
+            }
+            $display_parts[] = "(" . $form_name . ")";
+        }
+        
+        // Add NDC number if available
+        if (!empty($row['ndc_number'])) {
+            $display_parts[] = "[" . $row['ndc_number'] . "]";
+        }
+        
+        $display_name = implode(' ', $display_parts);
+        
         $return_arr[] = [
-            'display_name' => text($row['name'] . " (RxCUI:" . trim((string) $row['rxnorm']) . ")"),
+            'display_name' => $display_name,
             'id_name' => text($row['name']),
-            'rxnorm' => text($row['rxnorm'])
+            'rxnorm' => text($row['rxnorm'] ?? ''),
+            'drug_id' => $row['drug_id'] ?? null
         ];
     }
 
