@@ -1,0 +1,170 @@
+{
+  "version": "1.0",
+  "last_updated": "2026-01-18",
+  "mappings": [
+    {
+      "id": "top-nav-bar-mobile",
+      "description": "移动端顶部导航栏（日历、查找、复诊、信息、客户、费用、存货清单、报告、杂项、弹出窗口）",
+      "visual_features": {
+        "location": "top",
+        "layout": "horizontal",
+        "orientation": "row",
+        "keywords": [
+          "日历",
+          "查找",
+          "复诊",
+          "信息",
+          "客户",
+          "费用",
+          "存货清单",
+          "报告",
+          "杂项",
+          "弹出窗口"
+        ],
+        "text_patterns": [
+          "日历",
+          "查找",
+          "复诊",
+          "信息",
+          "客户",
+          "费用",
+          "存货清单",
+          "报告",
+          "杂项",
+          "弹出窗口"
+        ],
+        "position_hint": "页面顶部，水平排列的导航菜单项",
+        "ui_type": "navigation_bar",
+        "style_hints": [
+          "水平排列",
+          "文本链接",
+          "顶部固定或接近顶部"
+        ]
+      },
+      "config_files": [
+        {
+          "file": "interface/mobile/main/tabs/menu/menus/standard.json",
+          "description": "移动端主菜单配置文件，包含所有顶部导航栏菜单项的定义",
+          "json_path": "$[*].label",
+          "confidence": 0.95,
+          "notes": "菜单项通过 label 字段定义，顺序与显示顺序相关"
+        }
+      ],
+      "related_files": [
+        {
+          "file": "interface/mobile/main/tabs/main.php",
+          "description": "移动端主页面，渲染导航栏",
+          "relationship": "renders"
+        },
+        {
+          "file": "interface/mobile/main/tabs/js/tabs_view_model.js",
+          "description": "移动端标签页视图模型，处理菜单点击事件",
+          "relationship": "handles_interaction"
+        }
+      ],
+      "menu_items_mapping": {
+        "日历": {
+          "label": "Calendar",
+          "menu_id": "cal0",
+          "url": "/interface/main/main_info.php"
+        },
+        "查找": {
+          "label": "查找",
+          "menu_id": "fin0",
+          "url": "/interface/mobile/main/finder/dynamic_finder.php"
+        },
+        "复诊": {
+          "label": "复诊",
+          "menu_id": "pfb0",
+          "url": "/interface/mobile/main/messages/messages.php?go=Recalls"
+        },
+        "信息": {
+          "label": "Messages",
+          "menu_id": "msg0",
+          "url": "/interface/mobile/main/messages/messages.php?form_active=1"
+        },
+        "客户": {
+          "label": "Patient",
+          "menu_id": "patimg",
+          "note": "有子菜单"
+        },
+        "费用": {
+          "label": "Fees",
+          "menu_id": "feeimg",
+          "note": "有子菜单"
+        },
+        "存货清单": {
+          "label": "Inventory",
+          "menu_id": "invimg",
+          "url": "/interface/drugs/drug_inventory.php"
+        },
+        "报告": {
+          "label": "Reports",
+          "menu_id": "repimg",
+          "note": "有子菜单"
+        },
+        "杂项": {
+          "label": "Miscellaneous",
+          "menu_id": "misimg",
+          "note": "有子菜单"
+        },
+        "弹出窗口": {
+          "label": "Popups",
+          "menu_id": "popup",
+          "note": "有子菜单"
+        }
+      }
+    },
+    {
+      "id": "patient-dashboard",
+      "description": "患者仪表板页面",
+      "visual_features": {
+        "location": "center",
+        "layout": "vertical",
+        "keywords": [
+          "Medical Record Dashboard",
+          "Dashboard",
+          "历史",
+          "Assessments",
+          "报告",
+          "文件",
+          "交易",
+          "议题",
+          "Ledger",
+          "External Data",
+          "过敏症",
+          "医疗问题",
+          "药物",
+          "处方"
+        ],
+        "text_patterns": [
+          "Medical Record Dashboard",
+          "Dashboard",
+          "没有记录",
+          "Select Encounter"
+        ],
+        "position_hint": "页面中央，包含患者信息和多个标签页",
+        "ui_type": "dashboard",
+        "style_hints": [
+          "标签页布局",
+          "卡片式组件",
+          "编辑图标"
+        ]
+      },
+      "config_files": [
+        {
+          "file": "interface/patient_file/summary/demographics.php",
+          "description": "患者摘要页面主文件",
+          "confidence": 0.9
+        }
+      ],
+      "related_files": [
+        {
+          "file": "interface/patient_file/summary/demographics.php",
+          "description": "渲染患者仪表板",
+          "relationship": "renders"
+        }
+      ]
+    }
+  ]
+}
