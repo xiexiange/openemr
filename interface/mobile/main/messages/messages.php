@@ -480,7 +480,7 @@ if (!empty($_REQUEST['go'])) { ?>
                                         }
                                         $pres = sqlQuery("SELECT lname, fname " .
                                             "FROM patient_data WHERE pid = ?", [$reply_to[0]]);
-                                        $patientname = $pres['lname'] . ", " . $pres['fname'];
+                                        $patientname = $pres['fname'] . $pres['lname'];
                                         $note .= "\n\n$patientname on " . $row['date'] . " wrote:\n\n";
                                         $note .= $row['body'];
                                     }
@@ -611,7 +611,7 @@ if (!empty($_REQUEST['go'])) { ?>
                                                 if ($reply_to) {
                                                     $prow = sqlQuery("SELECT lname, fname,pid, pubpid, DOB  " .
                                                         "FROM patient_data WHERE pid = ?", [$reply_to]);
-                                                    $patientname = $prow['lname'] . ", " . $prow['fname'];
+                                                    $patientname = $prow['fname'] . $prow['lname'];
                                                 }
                                                 if ($task == "addnew" || $result['pid'] == 0) {
                                                     $cursor = "oe-cursor-add";
@@ -810,9 +810,12 @@ if (!empty($_REQUEST['go'])) { ?>
                             }
                             $patient = $myrow['pid'];
                             if ($patient > 0) {
-                                $patient = $myrow['patient_data_lname'];
+                                $patient = '';
                                 if ($myrow['patient_data_fname']) {
-                                    $patient .= ", " . $myrow['patient_data_fname'];
+                                    $patient .= $myrow['patient_data_fname'];
+                                }
+                                if ($myrow['patient_data_lname']) {
+                                    $patient .= $myrow['patient_data_lname'];
                                 }
                             } else {
                                 $patient = "* " . xl('Patient must be set manually') . " *";
@@ -1167,7 +1170,7 @@ if (!empty($_REQUEST['go'])) { ?>
         // This is for callback by the find-patient popup.
         function setpatient(pid, lname, fname, dob) {
             var f = document.getElementById('new_note');
-            f.form_patient.value += lname + ', ' + fname + '; ';
+            f.form_patient.value += fname + lname + '; ';
             f.reply_to.value += pid + ';';
             <?php if ($noteid) { ?>
             //used when direct messaging service inserts a pnote with indeterminate patient
@@ -1184,7 +1187,7 @@ if (!empty($_REQUEST['go'])) { ?>
             f.form_patient.value='';
             f.reply_to.value='';
             $.each(patientsList, function (key, patient) {
-                f.form_patient.value += patient.lname + ', ' + patient.fname + '; ';
+                f.form_patient.value += patient.fname + patient.lname + '; ';
                 f.reply_to.value += patient.pid + ';';
             })
 
