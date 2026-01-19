@@ -388,8 +388,32 @@ function rp()
     $sql = "SELECT option_id, title FROM list_options WHERE list_id = 'recent_patient_columns' AND activity = '1' ORDER BY seq ASC";
     $res = sqlStatement($sql);
     $headers = [];
+    $hasNameColumn = false;
     while ($row = sqlFetchArray($res)) {
+        $colname = $row['option_id'];
+        // H5: 如果配置中有 name 字段，则过滤掉 fname 和 lname，避免重复
+        if ($colname == 'name') {
+            $hasNameColumn = true;
+        }
+        // 如果已经有 name 字段，则跳过 fname 和 lname
+        if ($hasNameColumn && in_array($colname, ['fname', 'lname'])) {
+            continue;
+        }
         $headers[] = $row;
+    }
+    // 如果没有 name 字段但有 fname 或 lname，需要重新检查（因为可能先遇到 fname/lname）
+    if (!$hasNameColumn) {
+        foreach ($headers as $header) {
+            if ($header['option_id'] == 'name') {
+                $hasNameColumn = true;
+                // 移除 fname 和 lname
+                $headers = array_filter($headers, function($h) {
+                    return !in_array($h['option_id'], ['fname', 'lname']);
+                });
+                $headers = array_values($headers); // 重新索引
+                break;
+            }
+        }
     }
     $patientService = new PatientService();
     $rp = $patientService->getRecentPatientList();
@@ -414,39 +438,63 @@ function rp()
     foreach ($headers as $v) {
         $pd_sql .= ', ';
         $col_name = $v['option_id'];
-        $dt_format = '';
-        if (in_array($col_name, $date_cols) || in_array($col_name, $datetime_cols)) {
-            switch ($GLOBALS['date_display_format']) {
-                case 0: // mysql YYYY-MM-DD format
-                    $dt_format = "'%Y-%m-%d";
-                    break;
-                case 1: // MM/DD/YYYY format
-                    $dt_format = "'%m/%d/%Y";
-                    break;
-                case 2: // DD/MM/YYYY format
-                    $dt_format = "'%d/%m/%Y";
-                    break;
-            }
-            if (in_array($col_name, $datetime_cols)) {
-                switch ($GLOBALS['time_display_format']) {
-                    case 0: // 24 Hr fmt
-                        $dt_format .= " %T";
+        // H5: 参考 dynamic_finder_ajax.php 的实现，当遇到 name 字段时，查询 lname, fname, mname
+        if ($col_name == 'name') {
+            $pd_sql .= "lname, fname, mname";
+        } else {
+            $dt_format = '';
+            if (in_array($col_name, $date_cols) || in_array($col_name, $datetime_cols)) {
+                switch ($GLOBALS['date_display_format']) {
+                    case 0: // mysql YYYY-MM-DD format
+                        $dt_format = "'%Y-%m-%d";
                         break;
-                    case 1: // AM PM fmt
-                        $dt_format .= " %r";
+                    case 1: // MM/DD/YYYY format
+                        $dt_format = "'%m/%d/%Y";
+                        break;
+                    case 2: // DD/MM/YYYY format
+                        $dt_format = "'%d/%m/%Y";
                         break;
                 }
+                if (in_array($col_name, $datetime_cols)) {
+                    switch ($GLOBALS['time_display_format']) {
+                        case 0: // 24 Hr fmt
+                            $dt_format .= " %T";
+                            break;
+                        case 1: // AM PM fmt
+                            $dt_format .= " %r";
+                            break;
+                    }
+                }
+                $dt_format .= "'";  // Don't forget the closing '!
+                $pd_sql .= "DATE_FORMAT(" . $col_name . ", " . $dt_format . ") AS " . $col_name;
+            } else {
+                $pd_sql .= $col_name;
             }
-            $dt_format .= "'";  // Don't forget the closing '!
-            $pd_sql .= "DATE_FORMAT(" . $col_name . ", " . $dt_format . ") AS " . $col_name;
-        } else {
-            $pd_sql .= $col_name;
         }
     }
     $pd_sql .= " FROM patient_data WHERE pid = ?";
     $pd_data = [];
     foreach ($rp as $v) {
-        $pd_data[] = sqlQuery($pd_sql, $v['pid']);
+        $row = sqlQuery($pd_sql, $v['pid']);
+        // H5: 参考 dynamic_finder_ajax.php 的实现，当遇到 name 字段时，合并 fname + lname 显示
+        $processed_row = ['pid' => $row['pid']]; // 确保包含 pid
+        foreach ($headers as $header) {
+            $col_name = $header['option_id'];
+            if ($col_name == 'name') {
+                // Display format: First Name + Last Name (姓+名)
+                $name = '';
+                if (isset($row['fname']) && $row['fname']) {
+                    $name .= $row['fname'];
+                }
+                if (isset($row['lname']) && $row['lname']) {
+                    $name .= $row['lname'];
+                }
+                $processed_row[$col_name] = $name;
+            } else {
+                $processed_row[$col_name] = isset($row[$col_name]) ? $row[$col_name] : '';
+            }
+        }
+        $pd_data[] = $processed_row;
     }
     return ['headers' => $headers, 'rp' => $pd_data];
 }
