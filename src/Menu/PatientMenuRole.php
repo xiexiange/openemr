@@ -57,7 +57,19 @@ class PatientMenuRole extends MenuRole
             $menu_parsed = json_decode(file_get_contents($GLOBALS['OE_SITE_DIR'] . "/documents/custom_menus/patient_menus/" . $patientMenuRole));
         } else {
             // load a standardized menu (does not include .json in id)
-            $menu_parsed = json_decode(file_get_contents($GLOBALS['fileroot'] . "/interface/main/tabs/menu/menus/patient_menus/" . $patientMenuRole . ".json"));
+            // H5: 检测是否在 mobile 环境下运行，如果是则优先使用 mobile 目录下的菜单 JSON
+            $isMobile = $this->isMobileEnvironment();
+            $menuPath = $GLOBALS['fileroot'] . "/interface/main/tabs/menu/menus/patient_menus/" . $patientMenuRole . ".json";
+            
+            if ($isMobile) {
+                $mobileMenuPath = $GLOBALS['fileroot'] . "/interface/mobile/main/tabs/menu/menus/patient_menus/" . $patientMenuRole . ".json";
+                // 如果 mobile 目录下存在对应的 JSON，优先使用它
+                if (file_exists($mobileMenuPath)) {
+                    $menuPath = $mobileMenuPath;
+                }
+            }
+            
+            $menu_parsed = json_decode(file_get_contents($menuPath));
         }
         // if error, then die and report error
         if (!$menu_parsed) {
@@ -262,5 +274,36 @@ class PatientMenuRole extends MenuRole
         }
 
         return $menu_parsed;
+    }
+
+    /**
+     * Check if running in mobile environment
+     *
+     * @return bool True if running in mobile interface, false otherwise
+     */
+    private function isMobileEnvironment()
+    {
+        // 方法1: 检查 REQUEST_URI 或 SCRIPT_NAME 是否包含 /mobile/
+        if (isset($_SERVER['REQUEST_URI']) && strpos($_SERVER['REQUEST_URI'], '/interface/mobile/') !== false) {
+            return true;
+        }
+        if (isset($_SERVER['SCRIPT_NAME']) && strpos($_SERVER['SCRIPT_NAME'], '/interface/mobile/') !== false) {
+            return true;
+        }
+        
+        // 方法2: 检查 SESSION 中的 app1 是否为 'H5'（如果之前设置过）
+        if (isset($_SESSION['app1']) && $_SESSION['app1'] === 'H5') {
+            return true;
+        }
+        
+        // 方法3: 检查调用栈中是否有 mobile/main/tabs/main.php
+        $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 10);
+        foreach ($backtrace as $frame) {
+            if (isset($frame['file']) && strpos($frame['file'], '/interface/mobile/main/tabs/main.php') !== false) {
+                return true;
+            }
+        }
+        
+        return false;
     }
 }

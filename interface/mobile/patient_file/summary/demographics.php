@@ -879,7 +879,15 @@ $oemr_ui = new OemrUI($arrOeUiSettings);
          */
         async function updateUserVisibilitySetting(e) {
             const targetID = e.target.getAttribute("data-target");
+            // H5: 如果 targetID 为 null，直接返回，避免 substring 错误
+            if (!targetID) {
+                return;
+            }
             const target = document.querySelector(targetID);
+            // H5: 如果 target 为 null，直接返回，避免后续操作错误
+            if (!target) {
+                return;
+            }
             const targetStr = targetID.substring(1);
             // test ensure at least an element we want.
             if (target.classList.contains("collapse")) {
