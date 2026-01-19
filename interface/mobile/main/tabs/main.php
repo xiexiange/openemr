@@ -654,6 +654,50 @@ $twig = (new TwigContainer(null, $GLOBALS['kernel']))->getTwig();
         // 说明：
         // - Knockout 在模板中使用的是全局函数 menuActionClick 作为 click 处理器
         // - 这里对它做一次“包装”，不改变原有逻辑，只是在成功调用后做一次折叠
+        (function() {
+            // 保存原始的 menuActionClick 函数
+            var originalMenuActionClick = window.menuActionClick;
+            
+            // 包装 menuActionClick 函数
+            window.menuActionClick = function(data, evt) {
+                // 调用原始函数
+                var result = originalMenuActionClick.call(this, data, evt);
+                
+                // 在菜单动作执行后，延迟收起导航栏
+                setTimeout(function() {
+                    var $navbarToggler = $('.navbar-toggler');
+                    var $navbarCollapse = $('#mainMenu');
+                    
+                    // 检查导航栏是否展开，如果展开则触发 hamburger 按钮点击来收起
+                    if ($navbarCollapse.length > 0 && ($navbarCollapse.hasClass('show') || $navbarCollapse.is(':visible'))) {
+                        if ($navbarToggler.length > 0) {
+                            // 触发 hamburger 按钮点击，相当于用户再次点击红框区域
+                            $navbarToggler.trigger('click');
+                        } else {
+                            // 备用方案：直接收起导航栏
+                            try {
+                                $navbarCollapse.collapse('hide');
+                            } catch (e) {
+                                $navbarCollapse.removeClass('show');
+                            }
+                        }
+                    }
+                    
+                    // 同时收起所有打开的 dropdown 菜单
+                    $('.dropdown.show, .menuSection.dropdown.show').each(function() {
+                        var $dd = $(this);
+                        var $toggle = $dd.find('.dropdown-toggle');
+                        var $menu = $dd.find('.dropdown-menu, ul.menuEntries');
+                        $dd.removeClass('show');
+                        $menu.removeClass('show');
+                        $toggle.attr('aria-expanded', 'false');
+                    });
+                }, 500); // 延迟 500ms 确保菜单动作完全执行
+                
+                return result;
+            };
+        })();
+
     </script>
     <?php
 
