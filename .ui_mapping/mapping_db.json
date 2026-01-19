@@ -165,6 +165,129 @@
           "relationship": "renders"
         }
       ]
+    },
+    {
+      "id": "patient-file-nav-tabs",
+      "description": "患者文件导航标签页（Dashboard、历史、Assessments、报告、文件、交易、议题、Ledger、External Data）",
+      "visual_features": {
+        "location": "center",
+        "layout": "horizontal",
+        "orientation": "row",
+        "keywords": [
+          "Dashboard",
+          "历史",
+          "History",
+          "Assessments",
+          "报告",
+          "Report",
+          "文件",
+          "Documents",
+          "交易",
+          "Transactions",
+          "议题",
+          "Issues",
+          "Ledger",
+          "External Data"
+        ],
+        "text_patterns": [
+          "Dashboard",
+          "历史",
+          "Assessments",
+          "报告",
+          "文件",
+          "交易",
+          "议题",
+          "Ledger",
+          "External Data"
+        ],
+        "position_hint": "患者记录页面中央，在页面标题下方，水平排列的导航标签页",
+        "ui_type": "navigation_tabs",
+        "style_hints": [
+          "水平标签页",
+          "在患者信息下方",
+          "包含下拉菜单（Assessments）"
+        ],
+        "context_hints": [
+          "History and Lifestyle",
+          "患者记录页面",
+          "在编辑按钮上方"
+        ]
+      },
+      "config_files": [
+        {
+          "file": "interface/mobile/main/tabs/menu/menus/patient_menus/standard.json",
+          "description": "移动端患者文件菜单配置文件，包含所有导航标签页的定义",
+          "json_path": "$[*].label",
+          "confidence": 0.95,
+          "notes": "菜单项通过 label 字段定义，顺序与显示顺序相关"
+        },
+        {
+          "file": "interface/main/tabs/menu/menus/patient_menus/standard.json",
+          "description": "桌面端患者文件菜单配置文件",
+          "json_path": "$[*].label",
+          "confidence": 0.95,
+          "notes": "桌面端版本，结构与移动端相同"
+        }
+      ],
+      "related_files": [
+        {
+          "file": "interface/patient_file/summary/demographics.php",
+          "description": "患者摘要页面，可能渲染这些标签页",
+          "relationship": "renders"
+        },
+        {
+          "file": "interface/patient_file/history/history.php",
+          "description": "历史标签页对应的页面",
+          "relationship": "target_page"
+        }
+      ],
+      "menu_items_mapping": {
+        "Dashboard": {
+          "label": "Dashboard{{patient file}}",
+          "menu_id": "dashboard",
+          "url": "interface/patient_file/summary/demographics.php"
+        },
+        "历史": {
+          "label": "History",
+          "menu_id": "history",
+          "url": "interface/patient_file/history/history.php"
+        },
+        "Assessments": {
+          "label": "Assessments",
+          "menu_id": "sdoc",
+          "note": "有子菜单（SDOH Assessment）"
+        },
+        "报告": {
+          "label": "Report",
+          "menu_id": "report",
+          "url": "interface/patient_file/report/patient_report.php"
+        },
+        "文件": {
+          "label": "Documents",
+          "menu_id": "documents",
+          "url": "controller.php?document&list&patient_id="
+        },
+        "交易": {
+          "label": "Transactions",
+          "menu_id": "transactions",
+          "url": "interface/patient_file/transaction/transactions.php"
+        },
+        "议题": {
+          "label": "Issues",
+          "menu_id": "issues",
+          "url": "interface/patient_file/summary/stats_full.php?active=all"
+        },
+        "Ledger": {
+          "label": "Ledger",
+          "menu_id": "ledger",
+          "url": "interface/reports/pat_ledger.php?form=1&patient_id="
+        },
+        "External Data": {
+          "label": "External Data",
+          "menu_id": "external_data",
+          "url": "interface/reports/external_data.php"
+        }
+      }
     }
   ]
 }
